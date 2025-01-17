@@ -11,7 +11,6 @@ export type InputType =
 export interface SaveOptions {
     fileName?: string;
     mimeType?: string;
-    encoding?: string;       // For strings: 'utf-8', 'base64'
     promptSaveAs?: boolean;  // Show FileSystem Access API dialog?
     logLevel?: LogLevel;
 }
