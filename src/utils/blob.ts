@@ -1,45 +1,46 @@
-import {InputType, SaveOptions} from '../types';
+import { InputType, SaveOptions } from '../types';
 
 function isBase64DataUrl(str: string): boolean {
     return str.startsWith('data:') && str.includes(';base64,');
 }
 
-function isBase64String(str: string): boolean {
-    try {
-        return btoa(atob(str)) === str;
-    } catch (err) {
-        return false;
-    }
-}
-
-function isBase64(str: string): boolean {
-    return isBase64DataUrl(str) || isBase64String(str);
-}
-
 async function base64ToBlob(base64: string, mimeType?: string): Promise<Blob> {
-    if (isBase64DataUrl(base64)) {
-        // Already a data URL, use it directly
-        const response = await fetch(base64);
-        return response.blob();
+    const dataUrl = isBase64DataUrl(base64)
+        ? base64
+        : `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
+
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+
+    // If mimeType is explicitly provided, create a new Blob with that type
+    if (mimeType && blob.type !== mimeType) {
+        return new Blob([await blob.arrayBuffer()], { type: mimeType });
     }
 
-    // Regular base64, convert to data URL
-    const dataUrl = `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
-    const response = await fetch(dataUrl);
-    return response.blob();
+    return blob;
 }
 
-export async function convertToBlob(
-    input: InputType,
-    options: SaveOptions = {}
-): Promise<Blob> {
+export async function convertToBlob(input: InputType, options: SaveOptions = {}): Promise<Blob> {
+    // Object handling (automatically convert to JSON)
+    if (isObjectType(input)) {
+        return new Blob([JSON.stringify(input, null, 2)], {
+            type: options.mimeType || 'application/json'
+        });
+    }
+
     // String handling
     if (typeof input === 'string') {
-        // Base64 detection
-        if (isBase64(input)) {
+        // Case 1: Explicit base64 flag
+        if (options.isBase64) {
             return base64ToBlob(input, options.mimeType);
         }
-        // Regular string (e.g. JSON)
+
+        // Case 2: Data URL with base64 encoding
+        if (isBase64DataUrl(input)) {
+            return base64ToBlob(input, options.mimeType);
+        }
+
+        // Case 3: Plain string
         return new Blob([input], {
             type: options.mimeType || 'text/plain'
         });
@@ -80,4 +81,15 @@ export async function convertToBlob(
     }
 
     throw new Error('Unsupported input type');
+}
+
+function isObjectType(input: InputType): boolean {
+    return (
+        typeof input === 'object' &&
+        !(input instanceof Blob) &&
+        !(input instanceof ArrayBuffer) &&
+        !ArrayBuffer.isView(input) &&
+        !(input instanceof URLSearchParams) &&
+        !(input instanceof FormData)
+    );
 }

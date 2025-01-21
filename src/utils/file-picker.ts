@@ -14,9 +14,11 @@ export function getFilePickerOptions(blob: Blob, fileName: string): SaveFilePick
 
     return {
         suggestedName: fileName,
-        types: [{
-            description: 'File',
-            accept
-        }]
+        types: [
+            {
+                description: 'File',
+                accept
+            }
+        ]
     };
 }

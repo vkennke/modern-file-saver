@@ -1,14 +1,11 @@
-import type {SaveOptions} from './types';
-import {convertToBlob} from './utils/blob';
-import {createLogger} from './utils/logger';
-import {getFilePickerOptions} from './utils/file-picker';
+import { InputType, SaveOptions } from './types';
+import { convertToBlob } from './utils/blob';
+import { createLogger } from './utils/logger';
+import { getFilePickerOptions } from './utils/file-picker';
 
-export async function saveFile(
-    input: string | Blob | ArrayBuffer | Uint8Array | URLSearchParams | FormData,
-    options: SaveOptions = {}
-): Promise<void> {
+export async function saveFile(input: InputType, options: SaveOptions = {}): Promise<void> {
     const {
-        fileName = 'download',
+        fileName = input instanceof File ? input.name : 'download',
         promptSaveAs = true,
         logLevel = 'none'
     } = options;
@@ -24,7 +21,9 @@ export async function saveFile(
         if (promptSaveAs && 'showSaveFilePicker' in window) {
             try {
                 logger.debug('Attempting to use File System Access API');
-                const handle = await window.showSaveFilePicker(getFilePickerOptions(blob, fileName));
+                const handle = await window.showSaveFilePicker(
+                    getFilePickerOptions(blob, fileName)
+                );
 
                 logger.debug('File handle obtained, creating writable');
                 const writable = await handle.createWritable();
@@ -60,7 +59,6 @@ export async function saveFile(
             document.body.removeChild(link);
             logger.debug('File saved successfully using legacy method');
         }, 100);
-
     } catch (error) {
         logger.debug('Error saving file:', error);
         throw error;
