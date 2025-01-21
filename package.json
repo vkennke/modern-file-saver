@@ -4,14 +4,27 @@
   "description": "Modern file saving library for browsers with File System Access API support and fallback",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./min": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/min/index.js",
+      "import": "./dist/min/index.mjs"
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "npm run clean && tsup src/index.ts --format cjs,esm --dts",
+    "build": "npm run clean && npm run build:all && npm run minify",
+    "build:all": "tsup --config tsup.config.ts",
     "clean": "rimraf dist",
     "format": "prettier --write \"**/*.{js,ts}\"",
+    "minify": "node scripts/minify.mjs",
     "prepublishOnly": "npm run build",
     "test": "karma start --single-run",
     "test:watch": "karma start",
@@ -38,6 +51,7 @@
   },
   "homepage": "https://github.com/vkennke/modern-file-saver#readme",
   "devDependencies": {
+    "@swc/core": "^1.10.9",
     "@types/jasmine": "^5.1.5",
     "@types/wicg-file-system-access": "^2023.10.5",
     "jasmine-core": "^5.5.0",

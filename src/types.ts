@@ -1,13 +1,13 @@
 import { LogLevel } from './utils/logger';
 
 export type InputType =
-    | string          // Plain text, base64, or data URLs
-    | Blob            // Binary data with type information
-    | ArrayBuffer     // Raw binary data
-    | Uint8Array      // Binary data
+    | string // Plain text, base64, or data URLs
+    | Blob // Binary data with type information
+    | ArrayBuffer // Raw binary data
+    | Uint8Array // Binary data
     | URLSearchParams // Form data as URL parameters
-    | FormData        // Multipart form data
-    | object;         // Will be JSON.stringified
+    | FormData // Multipart form data
+    | object; // Will be JSON.stringified
 
 export interface SaveOptions {
     // Default: input.name (if File) or 'download'

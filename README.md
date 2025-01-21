@@ -15,6 +15,7 @@ A modern file saving library for browsers that uses the File System Access API w
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Bundle Variants](#bundle-variants)
   - [Supported Input Types](#supported-input-types)
   - [Options](#options)
   - [Base64 Handling](#base64-handling)
@@ -32,12 +33,12 @@ A modern file saving library for browsers that uses the File System Access API w
 
 - 🚀 Modern browser support with File System Access API
 - 🔄 Automatic fallback for older browsers
-- 💪 TypeScript support
+- 🔐 Safe file handling
 - 🎯 Multiple input formats supported
 - 📄 Enhanced base64 support
+- 💪 TypeScript support
 - 📦 Zero dependencies
-- 🔐 Safe file handling
-- 🪶 Tiny size (~5kb)
+- 🪶 Tiny size (~2.7kb minified, ~4.8kb unminified)
 
 
 ## Installation
@@ -55,9 +56,23 @@ import { saveFile } from 'modern-file-saver';
 await saveFile('Hello World', { fileName: 'hello.txt' });
 ```
 
-The library supports various input formats like strings, base64, blobs, objects, and more. See the [Examples](#examples) section for detailed usage examples.
+### Bundle Variants
+
+The library provides both regular and minified bundles. You can choose which one to use based on your needs:
+
+```typescript
+// Regular bundle (default)
+import { saveFile } from 'modern-file-saver';
+
+// Minified bundle
+import { saveFile } from 'modern-file-saver/min';
+```
+
+Both variants are available in CommonJS and ES Module formats and include TypeScript type definitions.
 
 ### Supported Input Types
+
+The library supports various input formats like strings, base64, blobs, objects, and more. See the [Examples](#examples) section for detailed usage examples.
 
 ```typescript
 type InputType =
