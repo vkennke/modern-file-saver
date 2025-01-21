@@ -1,6 +1,6 @@
 {
   "name": "modern-file-saver",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Modern file saving library for browsers with File System Access API support and fallback",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -29,14 +29,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/valentin-kennke/modern-file-saver.git"
+    "url": "git+https://github.com/vkennke/modern-file-saver.git"
   },
   "author": "Valentin Kennke",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/valentin-kennke/modern-file-saver/issues"
+    "url": "https://github.com/vkennke/modern-file-saver/issues"
   },
-  "homepage": "https://github.com/valentin-kennke/modern-file-saver#readme",
+  "homepage": "https://github.com/vkennke/modern-file-saver#readme",
   "devDependencies": {
     "@types/jasmine": "^5.1.5",
     "@types/wicg-file-system-access": "^2023.10.5",
