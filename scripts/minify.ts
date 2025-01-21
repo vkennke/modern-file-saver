@@ -1,19 +1,18 @@
 import swc from '@swc/core';
 import { promises as fs } from 'fs';
 
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
+function formatBytes(bytes: number): string {
+    if (bytes === 0) {
+        return '0 Bytes';
+    }
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-async function minifyFiles() {
-    const files = [
-        'dist/min/index.js',
-        'dist/min/index.mjs'
-    ];
+export async function minifyFiles() {
+    const files = ['dist/min/index.js', 'dist/min/index.mjs'];
 
     for (const file of files) {
         console.log(`\nProcessing ${file}...`);
@@ -33,12 +32,10 @@ async function minifyFiles() {
         });
 
         const minifiedSize = Buffer.byteLength(minified.code, 'utf-8');
-        const savings = ((originalSize - minifiedSize) / originalSize * 100).toFixed(1);
+        const savings = (((originalSize - minifiedSize) / originalSize) * 100).toFixed(1);
 
         await fs.writeFile(file, minified.code);
         console.log(`Minified size: ${formatBytes(minifiedSize)}`);
         console.log(`Reduction: ${savings}%`);
     }
 }
-
-minifyFiles().catch(console.error);

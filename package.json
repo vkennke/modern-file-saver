@@ -20,11 +20,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "npm run clean && npm run build:all && npm run minify",
-    "build:all": "tsup --config tsup.config.ts",
-    "clean": "rimraf dist",
+    "build": "tsup --config tsup.config.ts",
     "format": "prettier --write \"**/*.{js,ts}\"",
-    "minify": "node scripts/minify.mjs",
     "prepublishOnly": "npm run build",
     "test": "karma start --single-run",
     "test:watch": "karma start",
@@ -61,7 +58,6 @@
     "karma-jasmine": "^5.1.0",
     "karma-webpack": "^5.0.1",
     "prettier": "3.4.2",
-    "rimraf": "^6.0.1",
     "ts-loader": "^9.5.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.3",
