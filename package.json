@@ -1,6 +1,6 @@
 {
   "name": "modern-file-saver",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Modern file saving library for browsers with File System Access API support and fallback",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

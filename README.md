@@ -1,4 +1,5 @@
 # modern-file-saver
+A modern file saving library for browsers that uses the File System Access API when available and falls back to the traditional download method when necessary.
 
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
@@ -7,8 +8,6 @@
 [npm-url]: https://www.npmjs.com/package/modern-file-saver
 [downloads-image]: https://img.shields.io/npm/dm/modern-file-saver.svg
 [downloads-url]: https://www.npmjs.com/package/modern-file-saver
-
-A modern file saving library for browsers that uses the File System Access API when available and falls back to the traditional download method when necessary.
 
 ## Table of Contents
 
