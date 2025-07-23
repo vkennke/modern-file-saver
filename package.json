@@ -48,7 +48,7 @@
   },
   "homepage": "https://github.com/vkennke/modern-file-saver#readme",
   "devDependencies": {
-    "@swc/core": "^1.12.14",
+    "@swc/core": "^1.13.2",
     "@types/jasmine": "^5.1.8",
     "@types/wicg-file-system-access": "^2023.10.6",
     "jasmine-core": "^5.8.0",
