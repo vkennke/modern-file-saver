@@ -49,7 +49,7 @@
   "homepage": "https://github.com/vkennke/modern-file-saver#readme",
   "devDependencies": {
     "@swc/core": "^1.13.20",
-    "@types/jasmine": "^5.1.9",
+    "@types/jasmine": "^5.1.10",
     "@types/wicg-file-system-access": "^2023.10.6",
     "jasmine-core": "^5.11.0",
     "karma": "^6.4.4",
