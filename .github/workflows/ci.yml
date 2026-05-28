@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, master]
 
+# Restrict GITHUB_TOKEN to read-only access. The CI workflow only needs to
+# check out code, install dependencies and run scripts – no write access
+# to the repo is required.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
