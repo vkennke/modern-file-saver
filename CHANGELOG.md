@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0
+
+### Major Changes
+
+- [`1e6450a`](https://github.com/vkennke/modern-file-saver/commit/1e6450a47228bcf3268e0008eecc3fbf4b62a5be) Thanks [@vkennke](https://github.com/vkennke)! - Stable release of v2.0.0
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
