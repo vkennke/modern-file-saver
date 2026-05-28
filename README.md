@@ -319,17 +319,20 @@ await saveFile(data, {
 
 ## Migrating from file-saver
 
-[`file-saver`](https://github.com/eligrey/FileSaver.js) has been unmaintained since 2021. `modern-file-saver` is a zero-dependency drop-in replacement that adds [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) support (native save dialog in Chrome/Edge) with automatic fallback for other browsers.
+[`file-saver`](https://github.com/eligrey/FileSaver.js) has not had a release since November 2020 and several modern-browser concerns are not addressed. `modern-file-saver` is a zero-dependency alternative that adds [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) support (native save dialog in Chrome/Edge) with automatic fallback for other browsers, and ships with first-class TypeScript types and ES Modules.
 
-|                          | `file-saver`          | `modern-file-saver` |
-| ------------------------ | --------------------- | ------------------- |
-| Last release             | 2021                  | Active              |
-| File System Access API   | ❌                    | ✅                  |
-| TypeScript               | ❌ (types via @types) | ✅ (built-in)       |
-| ESM / tree-shakeable     | ❌                    | ✅                  |
-| Bundle size (min + gzip) | ~2.7 kB               | ~1.5 kB             |
-| Zero dependencies        | ✅                    | ✅                  |
-| npm provenance           | ❌                    | ✅                  |
+|                                 | `file-saver`          | `modern-file-saver` |
+| ------------------------------- | --------------------- | ------------------- |
+| Last release                    | 2.0.5 (November 2020) | Active              |
+| File System Access API          | ❌                    | ✅                  |
+| TypeScript types                | ❌ (via @types)       | ✅ built-in         |
+| Native ESM build                | ❌ (UMD only)         | ✅                  |
+| `exports` / `sideEffects` field | ❌                    | ✅                  |
+| Bundle size (min + gzip)        | ~1.3 kB               | ~1.5 kB             |
+| Zero dependencies               | ✅                    | ✅                  |
+| npm provenance                  | ❌                    | ✅                  |
+
+`modern-file-saver` is slightly larger because it supports more input types (objects, base64, data URLs, FormData, URLSearchParams, plain text, …) and a debug logger; `file-saver` accepts `Blob` and URL strings (auto-fetched via XHR).
 
 ### API Comparison
 
