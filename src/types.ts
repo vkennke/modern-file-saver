@@ -18,26 +18,41 @@ export type InputType =
     | readonly unknown[]; // Arrays -> JSON
 
 export interface SaveOptions {
-    // Default: input.name (if File) or 'download'
+    /**
+     * The filename for the saved file.
+     * @default input.name (if File) or 'download'
+     */
     fileName?: string;
 
-    // Default: based on input type
-    // - text/plain for strings
-    // - application/json for objects
-    // - application/octet-stream for binary data
-    // - application/x-www-form-urlencoded for URLSearchParams and FormData
+    /**
+     * The MIME type of the saved file.
+     * Defaults to a sensible value based on the input type:
+     * - `text/plain` for strings
+     * - `application/json` for objects/arrays
+     * - `application/octet-stream` for binary data
+     * - `application/x-www-form-urlencoded` for URLSearchParams/FormData
+     */
     mimeType?: string;
 
-    // Default: true
-    // When true, uses File System Access API's native save dialog in supporting browsers
-    // When false, forces the traditional download method
+    /**
+     * When `true`, uses the File System Access API's native save dialog in supporting browsers.
+     * When `false`, forces the traditional anchor-download fallback.
+     * @default true
+     */
     promptSaveAs?: boolean;
 
-    // Default: false
-    // When true, treats string input as base64 encoded data
+    /**
+     * When `true`, treats string input as base64-encoded data.
+     * @default false
+     */
     isBase64?: boolean;
 
-    // Default: 'none'
-    // Enable debug logging to console
+    /**
+     * Log level for debug output.
+     * - `'debug'`: verbose logging to console
+     * - `'warn'`: only warnings (e.g. API fallback)
+     * - `'none'`: silent
+     * @default 'none'
+     */
     logLevel?: LogLevel;
 }

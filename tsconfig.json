@@ -25,7 +25,7 @@
         "noImplicitThis": true,
         "useUnknownInCatchVariables": true,
         "alwaysStrict": true,
-        "exactOptionalPropertyTypes": false,
+        "exactOptionalPropertyTypes": true,
 
         // Enhanced Linting
         "noUnusedLocals": true,

@@ -20,7 +20,7 @@ export function getFilePickerOptions(blob: Blob, fileName: string): SaveFilePick
               {
                   description: 'File',
                   accept: {
-                      [mimeType as MIMEType]: [`.${fileName.slice(lastDot + 1)}` as FileExtension]
+                      [mimeType as MIMEType]: [`.${fileName.slice(lastDot + 1)}`]
                   }
               }
           ]
