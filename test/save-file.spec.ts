@@ -154,6 +154,32 @@ describe('saveFile', () => {
 
             expect(linkClickSpy).toHaveBeenCalled();
         });
+
+        it('should call writable.abort() and re-throw when write fails', async () => {
+            const writeError = new Error('Disk full');
+            const abortSpy = vi.fn().mockResolvedValue(undefined);
+            const closeSpy = vi.fn().mockResolvedValue(undefined);
+            const mockWritable = {
+                write: vi.fn().mockRejectedValue(writeError),
+                abort: abortSpy,
+                close: closeSpy
+            };
+            const mockHandle = {
+                createWritable: vi.fn().mockResolvedValue(mockWritable)
+            };
+            vi.spyOn(window, 'showSaveFilePicker').mockResolvedValue(
+                mockHandle as unknown as FileSystemFileHandle
+            );
+
+            await expect(
+                saveFile('test content', { fileName: 'test.txt', promptSaveAs: true })
+            ).rejects.toThrow(writeError);
+
+            expect(abortSpy).toHaveBeenCalled();
+            expect(closeSpy).not.toHaveBeenCalled();
+            // Fallback must NOT run after a write error
+            expect(linkClickSpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('cleanup and error handling', () => {
@@ -166,10 +192,7 @@ describe('saveFile', () => {
 
         it('should propagate convertToBlob errors', async () => {
             // Unsupported input – the new convertToBlob throws for symbols/functions etc.
-            await expect(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                saveFile(Symbol('x') as any, { promptSaveAs: false })
-            ).rejects.toThrow();
+            await expect(saveFile(Symbol('x') as any, { promptSaveAs: false })).rejects.toThrow();
             expect(linkClickSpy).not.toHaveBeenCalled();
         });
 

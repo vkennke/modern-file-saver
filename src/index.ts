@@ -28,25 +28,37 @@ export async function saveFile(input: InputType, options: SaveOptions = {}): Pro
 
     // Modern File System Access API
     if (promptSaveAs && typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+        let handle: FileSystemFileHandle | undefined;
         try {
             logger.debug('Attempting to use File System Access API');
-            const handle = await window.showSaveFilePicker(getFilePickerOptions(blob, fileName));
-
-            logger.debug('File handle obtained, creating writable');
-            const writable = await handle.createWritable();
-            try {
-                await writable.write(blob);
-            } finally {
-                await writable.close();
-            }
-            logger.debug('File saved successfully using File System Access API');
-            return;
+            handle = await window.showSaveFilePicker(getFilePickerOptions(blob, fileName));
         } catch (err) {
             if (err instanceof Error && err.name === 'AbortError') {
                 logger.debug('User aborted File System Access API save dialog');
                 throw err;
             }
             logger.debug('File System Access API failed, falling back to legacy method', err);
+        }
+
+        if (handle) {
+            // A handle was obtained – write errors are NOT silently caught here,
+            // they propagate to the caller (no fallback after a successful picker).
+            logger.debug('File handle obtained, creating writable');
+            const writable = await handle.createWritable();
+            try {
+                await writable.write(blob);
+                await writable.close();
+            } catch (err) {
+                // Discard the partially-written file. `abort()` may itself reject
+                // (e.g. if the writable is already in an errored state); we must
+                // not let that mask the original write error.
+                await writable.abort().catch(() => {
+                    /* swallow abort error – original error wins */
+                });
+                throw err;
+            }
+            logger.debug('File saved successfully using File System Access API');
+            return;
         }
     } else {
         logger.debug('Using legacy download method', {
