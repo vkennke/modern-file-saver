@@ -24,5 +24,9 @@ yarn-error.log*
 # others
 /coverage/
 
+# Vitest browser mode artefacts (screenshots, attachments)
+.vitest-attachments/
+**/__screenshots__/
+
 # macOS
 .DS_Store
