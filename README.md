@@ -182,7 +182,7 @@ Debug logs are prefixed with `[modern-file-saver]` and include information about
 
 - Requires modern JavaScript features (ES2024)
 
-> **Note:** The published bundle is compiled to ES2024 – supported by all current evergreen browsers (Chrome, Edge, Firefox incl. ESR, Safari). The `engines.node` field requires Node.js 18+ for development/build only; the runtime is browser-only.
+> **Note:** The published bundle is compiled to ES2024 – supported by all current evergreen browsers (Chrome, Edge, Firefox incl. ESR, Safari). The `engines.node` field requires Node.js 20+ for development/build only; the runtime is browser-only.
 
 ### Limitations
 
