@@ -25,8 +25,7 @@ export interface SaveOptions {
     // - text/plain for strings
     // - application/json for objects
     // - application/octet-stream for binary data
-    // - application/x-www-form-urlencoded for URLSearchParams
-    // - multipart/form-data for FormData
+    // - application/x-www-form-urlencoded for URLSearchParams and FormData
     mimeType?: string;
 
     // Default: true

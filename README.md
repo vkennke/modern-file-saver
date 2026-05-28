@@ -38,7 +38,7 @@ A modern file saving library for browsers that uses the File System Access API w
 - 📄 Enhanced base64 support
 - 💪 TypeScript support
 - 📦 Zero dependencies
-- 🪶 Tiny size (~2.7kb minified, ~4.8kb unminified)
+- 🪶 Tiny size (~3.1 kB minified, ~1.5 kB gzipped)
 
 ## Installation
 
@@ -80,7 +80,7 @@ type InputType =
     | ArrayBuffer // Raw binary data
     | Uint8Array // Binary data
     | URLSearchParams // Form data as URL parameters
-    | FormData // Multipart form data
+    | FormData // Form data – serialised as application/x-www-form-urlencoded
     | object; // Will be JSON.stringified
 ```
 
