@@ -1,0 +1,8 @@
+{
+  "mode": "exit",
+  "tag": "rc",
+  "initialVersions": {
+    "modern-file-saver": "2.0.0-rc.1"
+  },
+  "changesets": []
+}
