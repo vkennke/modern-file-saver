@@ -44,8 +44,9 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          # npm >= 11.5.1 is required for Trusted Publishing.
-          # Node 24 ships a recent npm.
+          # Current Node LTS. The actual publish runs via `pnpm publish`
+          # (invoked by changesets), which performs Trusted Publishing (OIDC)
+          # against the npm registry — supported since pnpm v10.
           node-version: 24.16.0
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
