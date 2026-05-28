@@ -2,6 +2,12 @@
 # package ecosystems to update and where the package manifests are located.
 # Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Note: this repo uses pnpm. Dependabot's `npm` ecosystem covers pnpm-lock.yaml
+# (no separate `pnpm` ecosystem id exists). However, Dependabot does NOT bump
+# the `packageManager` field in package.json automatically – tracked in
+# dependabot/dependabot-core#5704. Bump pnpm itself manually:
+#   corepack use pnpm@latest
 
 version: 2
 updates:
@@ -10,3 +16,9 @@ updates:
     versioning-strategy: increase
     schedule:
       interval: "daily"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+
