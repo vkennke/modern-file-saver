@@ -43,6 +43,12 @@
             "matchDepNames": ["pnpm"],
             "matchDepTypes": ["packageManager"],
             "rangeStrategy": "pin"
+        },
+        {
+            "description": "Block TypeScript v6 until ecosystem (typescript-eslint, tsdown, ...) is ready",
+            "matchPackageNames": ["typescript"],
+            "matchUpdateTypes": ["major"],
+            "enabled": false
         }
     ],
     "vulnerabilityAlerts": {
