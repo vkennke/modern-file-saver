@@ -25,6 +25,7 @@ A modern file saving library for browsers that uses the File System Access API w
 - [Examples](#examples)
     - [Basic Usage](#basic-usage)
     - [Advanced Examples](#advanced-examples)
+- [Migrating from file-saver](#migrating-from-file-saver)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
@@ -316,6 +317,38 @@ await saveFile(data, {
 });
 ```
 
+## Migrating from file-saver
+
+[`file-saver`](https://github.com/eligrey/FileSaver.js) has been unmaintained since 2021. `modern-file-saver` is a zero-dependency drop-in replacement that adds [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) support (native save dialog in Chrome/Edge) with automatic fallback for other browsers.
+
+|                          | `file-saver`          | `modern-file-saver` |
+| ------------------------ | --------------------- | ------------------- |
+| Last release             | 2021                  | Active              |
+| File System Access API   | ❌                    | ✅                  |
+| TypeScript               | ❌ (types via @types) | ✅ (built-in)       |
+| ESM / tree-shakeable     | ❌                    | ✅                  |
+| Bundle size (min + gzip) | ~2.7 kB               | ~1.5 kB             |
+| Zero dependencies        | ✅                    | ✅                  |
+| npm provenance           | ❌                    | ✅                  |
+
+### API Comparison
+
+```typescript
+// file-saver
+import { saveAs } from 'file-saver';
+saveAs(blob, 'hello.txt');
+
+// modern-file-saver
+import { saveFile } from 'modern-file-saver';
+await saveFile(blob, { fileName: 'hello.txt' });
+```
+
+The main differences:
+
+- `saveFile` is **async** (returns `Promise<void>`) – it awaits the File System Access API dialog and cleans up resources correctly
+- URL strings are **not** fetched automatically – fetch the response yourself and pass the `Blob` for full control over error handling
+- `fileName` is passed as part of the options object instead of a second positional argument
+
 ## Development
 
 ```bash
@@ -335,6 +368,14 @@ npm run build
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+When your change warrants a release (bug fix, new feature, breaking change), please include a changeset:
+
+```bash
+npx changeset
+```
+
+This will prompt you for the change type (patch / minor / major) and a short description that will appear in the changelog.
 
 ## License
 

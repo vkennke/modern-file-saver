@@ -45,7 +45,13 @@
         "browser",
         "file system access api",
         "blob",
-        "base64"
+        "base64",
+        "file-saver",
+        "filesaver",
+        "saveAs",
+        "file-download",
+        "file-saver alternative",
+        "file-saver replacement"
     ],
     "repository": {
         "type": "git",
