@@ -11,6 +11,11 @@ export default defineConfig({
             headless: true,
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }]
         },
-        include: ['test/**/*.spec.ts']
+        include: ['test/**/*.spec.ts'],
+        coverage: {
+            provider: 'v8',
+            include: ['src/**/*.ts'],
+            reporter: ['text', 'html', 'lcov']
+        }
     }
 });
