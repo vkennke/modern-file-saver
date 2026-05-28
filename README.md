@@ -354,18 +354,26 @@ The main differences:
 
 ## Development
 
+This repo uses [pnpm](https://pnpm.io/) as its package manager. The version is
+pinned via the `packageManager` field in `package.json` and is activated
+automatically by [Corepack](https://nodejs.org/api/corepack.html) (shipped with
+Node.js):
+
 ```bash
+# Enable Corepack once (no-op if already enabled)
+corepack enable
+
 # Install dependencies
-npm install
+pnpm install
 
 # Run tests in Chrome and Firefox
-npm test
+pnpm test
 
 # Run tests in watch mode
-npm run test:watch
+pnpm run test:watch
 
 # Build the library
-npm run build
+pnpm run build
 ```
 
 ## Contributing
@@ -375,7 +383,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 When your change warrants a release (bug fix, new feature, breaking change), please include a changeset:
 
 ```bash
-npx changeset
+pnpm exec changeset
 ```
 
 This will prompt you for the change type (patch / minor / major) and a short description that will appear in the changelog.

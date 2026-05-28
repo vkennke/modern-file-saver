@@ -20,19 +20,21 @@ jobs:
         node-version: [20, 22, 24]
     steps:
       - uses: actions/checkout@v5
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - run: npm ci
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox
+        run: pnpm exec playwright install --with-deps chromium firefox
       - name: Type-check
-        run: npm run lint
+        run: pnpm run lint
       - name: Prettier
-        run: npm run format:check
+        run: pnpm run format:check
       - name: Test (Vitest browser mode – Chromium + Firefox via Playwright)
-        run: npm test
+        run: pnpm test
       - name: Build
-        run: npm run build
+        run: pnpm run build
