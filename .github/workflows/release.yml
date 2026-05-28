@@ -46,7 +46,7 @@ jobs:
         with:
           # npm >= 11.5.1 is required for Trusted Publishing.
           # Node 24 ships a recent npm.
-          node-version: 24
+          node-version: 24.16.0
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
