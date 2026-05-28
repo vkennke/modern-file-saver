@@ -2,18 +2,21 @@ name: Release
 
 # Triggered by pushing a tag matching v*.*.* (e.g. v1.2.5).
 #
-# Setup steps (one-time):
-#   1. On npmjs.com → Access Tokens → create an "Automation" or "Granular" token
-#      with publish rights for `modern-file-saver`.
-#   2. In the GitHub repo → Settings → Secrets and variables → Actions → add
-#      a secret named `NPM_TOKEN` with that value.
-#   3. (Optional, recommended) On npmjs.com → package settings → enable
-#      "Require two-factor authentication" → "Authorization only" so that
-#      automation tokens still work.
+# Authentication: Uses npm Trusted Publishing (OIDC). No NPM_TOKEN needed.
+#
+# One-time setup on npmjs.com:
+#   1. https://www.npmjs.com/package/modern-file-saver/access → "Trusted Publisher"
+#   2. Add a new publisher with:
+#        - Publisher: GitHub Actions
+#        - Organization or user: vkennke
+#        - Repository: modern-file-saver
+#        - Workflow filename: release.yml
+#        - Environment name: (leave empty, or "npm" if you enable the environment below)
+#   3. Save.
 #
 # How to publish:
 #   1. Bump the version in package.json (e.g. `npm version patch`).
-#   2. Push the commit AND the tag: `git push && git push --tags`.
+#   2. Push the commit AND the tag: `git push --follow-tags`.
 #   3. This workflow takes over: verifies, builds, publishes, creates GH release.
 
 on:
@@ -28,7 +31,7 @@ concurrency:
 
 permissions:
   contents: write # create GitHub Release
-  id-token: write # npm provenance via OIDC
+  id-token: write # npm Trusted Publishing via OIDC
 
 jobs:
   verify:
@@ -68,15 +71,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # npm >= 11.5.1 is required for Trusted Publishing.
+          # Node 24 ships a recent npm; alternatively pin npm explicitly.
+          node-version: 24
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run build
-      - name: Publish (with provenance)
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish (Trusted Publishing + provenance)
+        # No NODE_AUTH_TOKEN needed – npm uses the GitHub OIDC token automatically.
+        # Provenance is generated automatically with Trusted Publishing.
+        run: npm publish --access public
 
   github-release:
     name: Create GitHub Release
@@ -89,9 +94,15 @@ jobs:
       - name: Create release with auto-generated notes
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "${GITHUB_REF_NAME}" \
+          # Mark as pre-release if the tag contains a hyphen (semver pre-release identifier)
+          PRERELEASE_FLAG=""
+          if [[ "$TAG" == *-* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          gh release create "$TAG" \
+            --title "$TAG" \
             --generate-notes \
-            --verify-tag
-
+            --verify-tag \
+            $PRERELEASE_FLAG
