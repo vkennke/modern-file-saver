@@ -38,7 +38,7 @@ jobs:
     name: Verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -68,8 +68,8 @@ jobs:
     #   name: npm
     #   url: https://www.npmjs.com/package/modern-file-saver
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           # npm >= 11.5.1 is required for Trusted Publishing.
           # Node 24 ships a recent npm; alternatively pin npm explicitly.
@@ -88,7 +88,7 @@ jobs:
     needs: publish
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Create release with auto-generated notes
