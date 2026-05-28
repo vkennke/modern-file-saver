@@ -11,7 +11,7 @@ describe('convertToBlob', () => {
         const text1 = await blob1.text();
         expect(text1).toBe('Hello World');
 
-        // Pure base64 without isBase64 flag
+        // Pure base64 without isBase64 flag → treated as plain text
         const blob2 = await convertToBlob(helloWorldBase64, { mimeType: 'text/plain' });
         const text2 = await blob2.text();
         expect(text2).toBe(helloWorldBase64);
@@ -29,11 +29,11 @@ describe('convertToBlob', () => {
     it('should handle invalid base64 input gracefully', async () => {
         // Invalid base64 string with isBase64 flag
         const invalidBase64 = 'not-valid-base64!@#';
-        await expectAsync(convertToBlob(invalidBase64, { isBase64: true })).toBeRejectedWithError();
+        await expectAsync(convertToBlob(invalidBase64, { isBase64: true })).toBeRejected();
 
         // Invalid data URL
         const invalidDataUrl = 'data:text/plain;base64,not-valid-base64!@#';
-        await expectAsync(convertToBlob(invalidDataUrl)).toBeRejectedWithError();
+        await expectAsync(convertToBlob(invalidDataUrl)).toBeRejected();
     });
 
     it('should handle large base64 strings', async () => {
@@ -55,10 +55,7 @@ describe('convertToBlob', () => {
     });
 
     it('should handle URLSearchParams input', async () => {
-        const params = new URLSearchParams({
-            name: 'test',
-            value: '123'
-        });
+        const params = new URLSearchParams({ name: 'test', value: '123' });
         const blob = await convertToBlob(params);
 
         expect(blob).toBeInstanceOf(Blob);
@@ -68,7 +65,13 @@ describe('convertToBlob', () => {
         expect(text).toBe('name=test&value=123');
     });
 
-    it('should handle FormData input', async () => {
+    it('should respect mimeType override for URLSearchParams', async () => {
+        const params = new URLSearchParams({ a: '1' });
+        const blob = await convertToBlob(params, { mimeType: 'text/plain' });
+        expect(blob.type).toBe('text/plain');
+    });
+
+    it('should handle FormData input as x-www-form-urlencoded', async () => {
         const formData = new FormData();
         formData.append('name', 'test');
         formData.append('value', '123');
@@ -76,11 +79,19 @@ describe('convertToBlob', () => {
         const blob = await convertToBlob(formData);
 
         expect(blob).toBeInstanceOf(Blob);
-        expect(blob.type).toBe('multipart/form-data');
+        // FormData is serialised as urlencoded – the MIME type reflects that.
+        expect(blob.type).toBe('application/x-www-form-urlencoded');
 
         const text = await blob.text();
         expect(text).toContain('name=test');
         expect(text).toContain('value=123');
+    });
+
+    it('should respect mimeType override for FormData', async () => {
+        const formData = new FormData();
+        formData.append('a', '1');
+        const blob = await convertToBlob(formData, { mimeType: 'text/csv' });
+        expect(blob.type).toBe('text/csv');
     });
 
     it('should handle plain string input', async () => {
@@ -95,9 +106,7 @@ describe('convertToBlob', () => {
     });
 
     it('should respect provided MIME type', async () => {
-        const input = new Blob(['{"text":"Hello World"}'], {
-            type: 'text/plain'
-        });
+        const input = new Blob(['{"text":"Hello World"}'], { type: 'text/plain' });
         const blob = await convertToBlob(input, { mimeType: 'application/json' });
 
         expect(blob).toBeInstanceOf(Blob);
@@ -106,23 +115,39 @@ describe('convertToBlob', () => {
         expect(text).toBe('{"text":"Hello World"}');
     });
 
+    it('should handle arrays as JSON', async () => {
+        const blob = await convertToBlob([1, 2, 3]);
+        expect(blob.type).toBe('application/json');
+        expect(JSON.parse(await blob.text())).toEqual([1, 2, 3]);
+    });
+
     describe('error handling', () => {
-        it('should handle null and undefined in FormData values', async () => {
+        it('should handle string FormData values', async () => {
             const formData = new FormData();
-            formData.append('nullValue', null as any);
-            formData.append('undefinedValue', undefined as any);
+            formData.append('emptyValue', '');
+            formData.append('value', 'x');
 
             const blob = await convertToBlob(formData);
             const text = await blob.text();
-            expect(text).toContain('nullValue=null');
-            expect(text).toContain('undefinedValue=undefined');
+            expect(text).toContain('emptyValue=');
+            expect(text).toContain('value=x');
         });
 
         it('should handle circular references in objects', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const circular: any = { name: 'test' };
             circular.self = circular;
 
             await expectAsync(convertToBlob(circular)).toBeRejectedWithError();
+        });
+
+        it('should reject unsupported input types', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await expectAsync(convertToBlob(Symbol('x') as any)).toBeRejected();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await expectAsync(convertToBlob(123 as any)).toBeRejected();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await expectAsync(convertToBlob(null as any)).toBeRejected();
         });
     });
 

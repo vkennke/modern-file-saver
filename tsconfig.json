@@ -1,46 +1,51 @@
 {
-  "compilerOptions": {
-    // Modern JavaScript Support
-    "target": "ES2024",
-    "module": "ES2022",
-    "lib": ["ES2024", "DOM"],
-    "moduleResolution": "bundler",
+    "compilerOptions": {
+        // Modern JavaScript Support – aligned with package.json browserslist
+        // ("defaults"). ES2024 is supported by all current evergreen browsers
+        // including Firefox ESR (see compat-table.github.io/compat-table), with the
+        // single exception of RegExp pattern modifiers which this library does not use.
+        "target": "ES2024",
+        "module": "ES2022",
+        "lib": ["ES2024", "DOM", "DOM.Iterable"],
+        "moduleResolution": "bundler",
 
-    // Build Output
-    "outDir": "./dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+        // Build Output
+        "outDir": "./dist",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
 
-    // Strict Type Checking
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
-    "alwaysStrict": true,
+        // Strict Type Checking
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "noImplicitThis": true,
+        "useUnknownInCatchVariables": true,
+        "alwaysStrict": true,
+        "exactOptionalPropertyTypes": false,
 
-    // Enhanced Linting
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
+        // Enhanced Linting
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
 
-    // Module Resolution
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+        // Module Resolution
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "verbatimModuleSyntax": false,
 
-    // Additional Features
-    "skipLibCheck": false,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+        // Additional Features
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": ["src"],
+    "exclude": ["node_modules", "dist"]
 }

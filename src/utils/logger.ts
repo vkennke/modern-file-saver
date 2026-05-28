@@ -4,16 +4,19 @@ export interface Logger {
     debug: (message: string, ...args: unknown[]) => void;
 }
 
-export class ConsoleLogger implements Logger {
-    constructor(private level: LogLevel = 'none') {}
-
-    debug(message: string, ...args: unknown[]): void {
-        if (this.level === 'debug') {
-            console.log(`[modern-file-saver] ${message}`, ...args);
-        }
+const noopLogger: Logger = {
+    debug: () => {
+        /* noop */
     }
-}
+};
 
 export function createLogger(level: LogLevel = 'none'): Logger {
-    return new ConsoleLogger(level);
+    if (level !== 'debug') {
+        return noopLogger;
+    }
+    return {
+        debug: (message, ...args) => {
+            console.log(`[modern-file-saver] ${message}`, ...args);
+        }
+    };
 }

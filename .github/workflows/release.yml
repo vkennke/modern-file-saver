@@ -1,0 +1,97 @@
+name: Release
+
+# Triggered by pushing a tag matching v*.*.* (e.g. v1.2.5).
+#
+# Setup steps (one-time):
+#   1. On npmjs.com → Access Tokens → create an "Automation" or "Granular" token
+#      with publish rights for `modern-file-saver`.
+#   2. In the GitHub repo → Settings → Secrets and variables → Actions → add
+#      a secret named `NPM_TOKEN` with that value.
+#   3. (Optional, recommended) On npmjs.com → package settings → enable
+#      "Require two-factor authentication" → "Authorization only" so that
+#      automation tokens still work.
+#
+# How to publish:
+#   1. Bump the version in package.json (e.g. `npm version patch`).
+#   2. Push the commit AND the tag: `git push && git push --tags`.
+#   3. This workflow takes over: verifies, builds, publishes, creates GH release.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# Cancel any in-flight release for the same ref (rare but possible).
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # create GitHub Release
+  id-token: write # npm provenance via OIDC
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME}"
+          echo "Tag:            $TAG"
+          echo "package.json:   $PKG_VERSION"
+          if [ "$TAG" != "$PKG_VERSION" ]; then
+            echo "::error::Tag $TAG does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+
+  publish:
+    name: Publish to npm
+    needs: verify
+    runs-on: ubuntu-latest
+    # Uncomment to require manual approval before publishing:
+    # environment:
+    #   name: npm
+    #   url: https://www.npmjs.com/package/modern-file-saver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - run: npm run build
+      - name: Publish (with provenance)
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  github-release:
+    name: Create GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create release with auto-generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --verify-tag
+

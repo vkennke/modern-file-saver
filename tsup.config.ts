@@ -1,23 +1,27 @@
-import { defineConfig } from 'tsup';
+import { defineConfig, type Options } from 'tsup';
 import { minifyFiles } from './scripts/minify';
 
-const baseConfig = {
+const baseConfig: Options = {
     entry: ['src/index.ts'],
-    dts: true,
     sourcemap: true,
     clean: true,
-    treeshake: true
+    treeshake: true,
+    platform: 'browser',
+    target: 'es2024',
+    format: ['cjs', 'esm']
 };
 
 export default defineConfig([
     {
         ...baseConfig,
-        format: ['cjs', 'esm'],
+        // Generate type declarations only for the main (non-minified) build;
+        // the "min" build re-uses the same .d.ts via package.json "exports".
+        dts: true,
         outDir: 'dist'
     },
     {
         ...baseConfig,
-        format: ['cjs', 'esm'],
+        dts: false,
         outDir: 'dist/min',
         async onSuccess() {
             await minifyFiles();

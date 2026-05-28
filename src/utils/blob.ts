@@ -4,30 +4,56 @@ function isBase64DataUrl(str: string): boolean {
     return str.startsWith('data:') && str.includes(';base64,');
 }
 
-async function base64ToBlob(base64: string, mimeType?: string): Promise<Blob> {
-    const dataUrl = isBase64DataUrl(base64)
-        ? base64
-        : `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
+/**
+ * Decode a base64 string (or base64 data URL) to a Blob.
+ * Uses atob + Uint8Array directly instead of `fetch(dataUrl)` for performance
+ * and to get a real error on invalid base64 input.
+ */
+function base64ToBlob(base64: string, mimeType?: string): Blob {
+    let rawBase64 = base64;
+    let detectedMime: string | undefined;
 
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-
-    // If mimeType is explicitly provided, create a new Blob with that type
-    if (mimeType && blob.type !== mimeType) {
-        return new Blob([await blob.arrayBuffer()], { type: mimeType });
+    if (isBase64DataUrl(base64)) {
+        const match = /^data:([^;,]*)?;base64,(.*)$/s.exec(base64);
+        if (!match) {
+            throw new Error('Invalid base64 data URL');
+        }
+        detectedMime = match[1] || undefined;
+        rawBase64 = match[2] ?? '';
     }
 
-    return blob;
+    // atob throws DOMException 'InvalidCharacterError' on invalid input
+    const binary = atob(rawBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new Blob([bytes], {
+        type: mimeType || detectedMime || 'application/octet-stream'
+    });
+}
+
+function isPlainObjectOrArray(input: unknown): input is Record<string, unknown> | unknown[] {
+    if (input === null || typeof input !== 'object') {
+        return false;
+    }
+    if (
+        input instanceof Blob ||
+        input instanceof ArrayBuffer ||
+        ArrayBuffer.isView(input) ||
+        input instanceof URLSearchParams ||
+        input instanceof FormData ||
+        input instanceof Date ||
+        input instanceof Map ||
+        input instanceof Set
+    ) {
+        return false;
+    }
+    return true;
 }
 
 export async function convertToBlob(input: InputType, options: SaveOptions = {}): Promise<Blob> {
-    // Object handling (automatically convert to JSON)
-    if (isObjectType(input)) {
-        return new Blob([JSON.stringify(input, null, 2)], {
-            type: options.mimeType || 'application/json'
-        });
-    }
-
     // String handling
     if (typeof input === 'string') {
         // Case 1: Explicit base64 flag
@@ -46,7 +72,7 @@ export async function convertToBlob(input: InputType, options: SaveOptions = {})
         });
     }
 
-    // Blob
+    // Blob (also File)
     if (input instanceof Blob) {
         if (options.mimeType && options.mimeType !== input.type) {
             // if a different MIME type is required, a new blob is created
@@ -55,7 +81,7 @@ export async function convertToBlob(input: InputType, options: SaveOptions = {})
         return input;
     }
 
-    // ArrayBuffer or TypedArray
+    // ArrayBuffer or TypedArray / DataView
     if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
         return new Blob([input as BlobPart], {
             type: options.mimeType || 'application/octet-stream'
@@ -65,31 +91,32 @@ export async function convertToBlob(input: InputType, options: SaveOptions = {})
     // URLSearchParams
     if (input instanceof URLSearchParams) {
         return new Blob([input.toString()], {
-            type: 'application/x-www-form-urlencoded'
+            type: options.mimeType || 'application/x-www-form-urlencoded'
         });
     }
 
-    // FormData
+    // FormData – serialise as x-www-form-urlencoded (we don't generate multipart
+    // boundaries here). The MIME type reflects the actual on-disk format.
     if (input instanceof FormData) {
         const pairs: string[] = [];
         input.forEach((value, key) => {
-            pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value.toString())}`);
+            // Browsers stringify File values to "[object File]" via toString();
+            // we keep parity with that behaviour but skip null/undefined-ish values
+            // explicitly for readability.
+            pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
         });
         return new Blob([pairs.join('&')], {
-            type: 'multipart/form-data'
+            type: options.mimeType || 'application/x-www-form-urlencoded'
+        });
+    }
+
+    // Object / Array handling (automatically convert to JSON) – checked last so
+    // none of the structured types above are accidentally treated as JSON.
+    if (isPlainObjectOrArray(input)) {
+        return new Blob([JSON.stringify(input, null, 2)], {
+            type: options.mimeType || 'application/json'
         });
     }
 
     throw new Error('Unsupported input type');
-}
-
-function isObjectType(input: InputType): boolean {
-    return (
-        typeof input === 'object' &&
-        !(input instanceof Blob) &&
-        !(input instanceof ArrayBuffer) &&
-        !ArrayBuffer.isView(input) &&
-        !(input instanceof URLSearchParams) &&
-        !(input instanceof FormData)
-    );
 }

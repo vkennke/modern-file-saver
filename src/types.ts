@@ -1,13 +1,21 @@
 import { LogLevel } from './utils/logger';
 
+/**
+ * Supported input types for {@link saveFile}.
+ *
+ * Note: `Record<string, unknown> | unknown[]` covers plain objects and arrays
+ * which will be serialised with `JSON.stringify`. Class instances are also
+ * allowed but their non-enumerable members will not be serialised.
+ */
 export type InputType =
     | string // Plain text, base64, or data URLs
-    | Blob // Binary data with type information
+    | Blob // Binary data with type information (also File)
     | ArrayBuffer // Raw binary data
-    | Uint8Array // Binary data
+    | ArrayBufferView // Uint8Array and other typed arrays / DataView
     | URLSearchParams // Form data as URL parameters
     | FormData // Multipart form data
-    | object; // Will be JSON.stringified
+    | Record<string, unknown> // Plain objects -> JSON
+    | readonly unknown[]; // Arrays -> JSON
 
 export interface SaveOptions {
     // Default: input.name (if File) or 'download'
