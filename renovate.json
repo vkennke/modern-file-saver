@@ -55,6 +55,13 @@
             "matchDepTypes": ["engines"],
             "matchPackageNames": ["node"],
             "enabled": false
+        },
+        {
+            "description": "Don't pin Node to a patch version in GitHub Actions — stay on the major (e.g. 24) to always get latest security patches",
+            "matchManagers": ["github-actions"],
+            "matchPackageNames": ["node", "actions/node-versions"],
+            "matchUpdateTypes": ["minor", "patch"],
+            "enabled": false
         }
     ],
     "vulnerabilityAlerts": {

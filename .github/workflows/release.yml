@@ -15,68 +15,68 @@ name: Release
 # Trusted Publisher must point to this workflow file (release.yml).
 
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 
 concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
 
 permissions:
-  contents: write # create the version-packages PR + git tags
-  pull-requests: write # create / update the version-packages PR
-  id-token: write # npm Trusted Publishing via OIDC
+    contents: write # create the version-packages PR + git tags
+    pull-requests: write # create / update the version-packages PR
+    id-token: write # npm Trusted Publishing via OIDC
 
 jobs:
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          # changesets/action needs the full history to derive the
-          # changelog correctly and to push the version-packages PR.
-          fetch-depth: 0
+    release:
+        name: Release
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  # changesets/action needs the full history to derive the
+                  # changelog correctly and to push the version-packages PR.
+                  fetch-depth: 0
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+            - name: Install pnpm
+              uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v6
-        with:
-          # Current Node LTS. The actual publish runs via `pnpm publish`
-          # (invoked by changesets), which performs Trusted Publishing (OIDC)
-          # against the npm registry — supported since pnpm v10.
-          node-version: 24.16.0
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+            - uses: actions/setup-node@v6
+              with:
+                  # Current Node LTS. The actual publish runs via `pnpm publish`
+                  # (invoked by changesets), which performs Trusted Publishing (OIDC)
+                  # against the npm registry — supported since pnpm v10.
+                  node-version: 24
+                  cache: 'pnpm'
+                  registry-url: 'https://registry.npmjs.org'
 
-      - run: pnpm install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium firefox
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install --with-deps chromium firefox
 
-      - name: Verify (lint, format, test, build)
-        run: |
-          pnpm run lint
-          pnpm run format:check
-          pnpm test
-          pnpm run build
+            - name: Verify (lint, format, test, build)
+              run: |
+                  pnpm run lint
+                  pnpm run format:check
+                  pnpm test
+                  pnpm run build
 
-      - name: Create release PR or publish
-        uses: changesets/action@v1
-        with:
-          # When there are no pending changesets, this script runs and
-          # publishes any pending versioned packages to npm (with provenance,
-          # automatic via Trusted Publishing).
-          publish: pnpm run changeset:publish
-          # When there ARE pending changesets, the action opens / updates
-          # the "Version Packages" PR using this commit message + title.
-          version: pnpm run changeset:version
-          commit: 'chore: version packages'
-          title: 'chore: version packages'
-          # Create a GitHub Release for each published package version,
-          # using the CHANGELOG.md entry as the release body.
-          createGithubReleases: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Create release PR or publish
+              uses: changesets/action@v1
+              with:
+                  # When there are no pending changesets, this script runs and
+                  # publishes any pending versioned packages to npm (with provenance,
+                  # automatic via Trusted Publishing).
+                  publish: pnpm run changeset:publish
+                  # When there ARE pending changesets, the action opens / updates
+                  # the "Version Packages" PR using this commit message + title.
+                  version: pnpm run changeset:version
+                  commit: 'chore: version packages'
+                  title: 'chore: version packages'
+                  # Create a GitHub Release for each published package version,
+                  # using the CHANGELOG.md entry as the release body.
+                  createGithubReleases: true
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
