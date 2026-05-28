@@ -1,126 +1,76 @@
 name: Release
 
-# Triggered by pushing a tag matching v*.*.* (e.g. v1.2.5).
+# Changesets-driven release workflow.
 #
-# Authentication: Uses npm Trusted Publishing (OIDC). No NPM_TOKEN needed.
+# Flow:
+# 1. Push to main → this workflow runs.
+# 2. If there are pending changesets in .changeset/, the changesets/action
+#    opens (or updates) a "Version Packages" PR that bumps the version
+#    and updates CHANGELOG.md.
+# 3. When that PR is merged, this workflow runs again and – since the
+#    changesets are now consumed – publishes the new version to npm
+#    and creates a GitHub Release with the changelog as release notes.
 #
-# One-time setup on npmjs.com:
-#   1. https://www.npmjs.com/package/modern-file-saver/access → "Trusted Publisher"
-#   2. Add a new publisher with:
-#        - Publisher: GitHub Actions
-#        - Organization or user: vkennke
-#        - Repository: modern-file-saver
-#        - Workflow filename: release.yml
-#        - Environment name: (leave empty, or "npm" if you enable the environment below)
-#   3. Save.
-#
-# How to publish:
-#   1. Bump the version in package.json (e.g. `npm version patch`).
-#   2. Push the commit AND the tag: `git push --follow-tags`.
-#   3. This workflow takes over: verifies, builds, publishes, creates GH release.
+# Authentication: npm Trusted Publishing (OIDC). No NPM_TOKEN needed.
+# Trusted Publisher must point to this workflow file (release.yml).
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
 
-# Cancel any in-flight release for the same ref (rare but possible).
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
-  contents: write # create GitHub Release
+  contents: write # create the version-packages PR + git tags
+  pull-requests: write # create / update the version-packages PR
   id-token: write # npm Trusted Publishing via OIDC
 
 jobs:
-  verify:
-    name: Verify
+  release:
+    name: Release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
         with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - name: Verify tag matches package.json version
-        run: |
-          PKG_VERSION="v$(node -p "require('./package.json').version")"
-          TAG="${GITHUB_REF_NAME}"
-          echo "Tag:            $TAG"
-          echo "package.json:   $PKG_VERSION"
-          if [ "$TAG" != "$PKG_VERSION" ]; then
-            echo "::error::Tag $TAG does not match package.json version $PKG_VERSION"
-            exit 1
-          fi
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm test
-      - run: npm run build
+          # changesets/action needs the full history to derive the
+          # changelog correctly and to push the version-packages PR.
+          fetch-depth: 0
 
-  publish:
-    name: Publish to npm
-    needs: verify
-    runs-on: ubuntu-latest
-    # Uncomment to require manual approval before publishing:
-    # environment:
-    #   name: npm
-    #   url: https://www.npmjs.com/package/modern-file-saver
-    steps:
-      - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           # npm >= 11.5.1 is required for Trusted Publishing.
-          # Node 24 ships a recent npm; alternatively pin npm explicitly.
+          # Node 24 ships a recent npm.
           node-version: 24
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - run: npm run build
-      - name: Determine npm dist-tag
-        id: dist_tag
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          # Strip leading "v" → semver string (e.g. v2.0.0-rc.0 → 2.0.0-rc.0)
-          VERSION="${TAG#v}"
-          # Extract the prerelease identifier if any: take everything after the
-          # first "-" up to the first "." (e.g. "rc.0" → "rc", "beta" → "beta").
-          # If no prerelease identifier is present, fall back to "latest".
-          if [[ "$VERSION" == *-* ]]; then
-            PRE="${VERSION#*-}"      # 2.0.0-rc.0 → rc.0
-            DIST_TAG="${PRE%%.*}"    # rc.0 → rc
-          else
-            DIST_TAG="latest"
-          fi
-          echo "Publishing $VERSION with dist-tag '$DIST_TAG'"
-          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
-      - name: Publish (Trusted Publishing + provenance)
-        # No NODE_AUTH_TOKEN needed – npm uses the GitHub OIDC token automatically.
-        # Provenance is generated automatically with Trusted Publishing.
-        run: npm publish --access public --tag "${{ steps.dist_tag.outputs.dist_tag }}"
 
-  github-release:
-    name: Create GitHub Release
-    needs: publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - name: Create release with auto-generated notes
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+      - run: npm ci
+
+      - name: Verify (lint, format, test, build)
         run: |
-          # Mark as pre-release if the tag contains a hyphen (semver pre-release identifier)
-          PRERELEASE_FLAG=""
-          if [[ "$TAG" == *-* ]]; then
-            PRERELEASE_FLAG="--prerelease"
-          fi
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --generate-notes \
-            --verify-tag \
-            $PRERELEASE_FLAG
+          npm run lint
+          npm run format:check
+          npm test
+          npm run build
+
+      - name: Create release PR or publish
+        uses: changesets/action@v1
+        with:
+          # When there are no pending changesets, this script runs and
+          # publishes any pending versioned packages to npm (with provenance,
+          # automatic via Trusted Publishing).
+          publish: npm run changeset:publish
+          # When there ARE pending changesets, the action opens / updates
+          # the "Version Packages" PR using this commit message + title.
+          version: npm run changeset:version
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
+          # Create a GitHub Release for each published package version,
+          # using the CHANGELOG.md entry as the release body.
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
