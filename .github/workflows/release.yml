@@ -33,16 +33,16 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           # changesets/action needs the full history to derive the
           # changelog correctly and to push the version-packages PR.
           fetch-depth: 0
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           # npm >= 11.5.1 is required for Trusted Publishing.
           # Node 24 ships a recent npm.
