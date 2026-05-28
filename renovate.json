@@ -49,6 +49,12 @@
             "matchPackageNames": ["typescript"],
             "matchUpdateTypes": ["major"],
             "enabled": false
+        },
+        {
+            "description": "Don't narrow engines.node — keep the broad range we set intentionally for library consumers",
+            "matchDepTypes": ["engines"],
+            "matchPackageNames": ["node"],
+            "enabled": false
         }
     ],
     "vulnerabilityAlerts": {
