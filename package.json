@@ -36,7 +36,8 @@
         "prepublishOnly": "npm run build",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "prepare": "husky"
     },
     "keywords": [
         "file",
@@ -72,6 +73,7 @@
         "@vitest/browser-playwright": "^4.1.7",
         "@vitest/coverage-v8": "^4.1.7",
         "eslint": "^10.4.0",
+        "husky": "^9.1.7",
         "playwright": "^1.60.0",
         "prettier": "3.8.3",
         "tsdown": "^0.22.0",
