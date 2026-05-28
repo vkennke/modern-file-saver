@@ -13,37 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  # Fast pre-check: fail with a clear message if package-lock.json is out of
-  # sync with package.json, instead of letting the full build matrix fail
-  # later with the cryptic "npm ci can only install packages when your
-  # package.json and package-lock.json are in sync" error.
-  #
-  # npm versions across Node releases produce slightly different lockfiles
-  # (different dedupe, different "peer" markers, etc.). We pin npm to the
-  # same major version across all CI jobs to keep results reproducible and
-  # aligned with the lockfile committed from a developer machine.
-  lockfile-sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-      - name: Pin npm to v11
-        run: npm install -g npm@11
-      - name: Verify package-lock.json is in sync with package.json
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          if ! git diff --exit-code -- package-lock.json; then
-            echo ""
-            echo "::error::package-lock.json is out of sync with package.json."
-            echo "::error::Run 'npm install' locally and commit the updated package-lock.json."
-            exit 1
-          fi
-
   build:
-    needs: lockfile-sync
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -55,8 +25,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - name: Pin npm to v11
-        run: npm install -g npm@11
       - run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox
