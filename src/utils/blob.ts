@@ -57,7 +57,7 @@ export async function convertToBlob(input: InputType, options: SaveOptions = {})
 
     // ArrayBuffer or TypedArray
     if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
-        return new Blob([input], {
+        return new Blob([input as BlobPart], {
             type: options.mimeType || 'application/octet-stream'
         });
     }

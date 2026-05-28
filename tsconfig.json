@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     // Modern JavaScript Support
-    "target": "ES2023",
+    "target": "ES2024",
     "module": "ES2022",
-    "lib": ["ES2023", "DOM"],
+    "lib": ["ES2024", "DOM"],
     "moduleResolution": "bundler",
 
     // Build Output
