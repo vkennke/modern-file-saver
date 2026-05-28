@@ -97,13 +97,23 @@ export async function convertToBlob(input: InputType, options: SaveOptions = {})
 
     // FormData – serialise as x-www-form-urlencoded (we don't generate multipart
     // boundaries here). The MIME type reflects the actual on-disk format.
+    //
+    // FormData can hold File/Blob values, but x-www-form-urlencoded has no way
+    // to represent binary content. Silently dropping the bytes (or serialising
+    // only the filename) would corrupt the saved file without the caller
+    // noticing, so we throw with an actionable message instead.
     if (input instanceof FormData) {
         const pairs: string[] = [];
         input.forEach((value, key) => {
-            // Browsers stringify File values to "[object File]" via toString();
-            // we keep parity with that behaviour but skip null/undefined-ish values
-            // explicitly for readability.
-            pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+            if (value instanceof Blob) {
+                const kind = value instanceof File ? `File "${value.name}"` : 'Blob';
+                throw new Error(
+                    `FormData entry "${key}" is a ${kind}; x-www-form-urlencoded ` +
+                        `cannot represent binary data. Pass the File/Blob directly to ` +
+                        `saveFile() or serialise the FormData yourself (e.g. as multipart).`
+                );
+            }
+            pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
         });
         return new Blob([pairs.join('&')], {
             type: options.mimeType || 'application/x-www-form-urlencoded'

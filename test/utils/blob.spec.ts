@@ -134,8 +134,32 @@ describe('convertToBlob', () => {
             expect(text).toContain('value=x');
         });
 
+        it('should reject FormData containing a File', async () => {
+            const formData = new FormData();
+            formData.append('name', 'test');
+            formData.append('upload', new File(['hello'], 'cv.pdf', { type: 'application/pdf' }));
+
+            await expect(convertToBlob(formData)).rejects.toThrow(
+                /File "cv\.pdf".*x-www-form-urlencoded/
+            );
+        });
+
+        it('should reject FormData containing a Blob (browsers wrap it as File "blob")', async () => {
+            // Per the WHATWG XHR spec, FormData.append(name, Blob) materialises
+            // the Blob as a File with name "blob". We surface that to the caller
+            // rather than silently corrupting the output.
+            const formData = new FormData();
+            formData.append(
+                'binary',
+                new Blob(['raw bytes'], { type: 'application/octet-stream' })
+            );
+
+            await expect(convertToBlob(formData)).rejects.toThrow(
+                /File "blob".*x-www-form-urlencoded/
+            );
+        });
+
         it('should handle circular references in objects', async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const circular: any = { name: 'test' };
             circular.self = circular;
 
@@ -143,11 +167,8 @@ describe('convertToBlob', () => {
         });
 
         it('should reject unsupported input types', async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await expect(convertToBlob(Symbol('x') as any)).rejects.toThrow();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await expect(convertToBlob(123 as any)).rejects.toThrow();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await expect(convertToBlob(null as any)).rejects.toThrow();
         });
     });
