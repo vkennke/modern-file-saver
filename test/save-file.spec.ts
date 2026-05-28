@@ -1,13 +1,14 @@
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { saveFile } from '../src';
 
 describe('saveFile', () => {
     let mockLink: HTMLAnchorElement;
-    let linkClickSpy: jasmine.Spy;
-    let createObjectURLSpy: jasmine.Spy;
+    let linkClickSpy: ReturnType<typeof vi.fn>;
+    let createObjectURLSpy: MockInstance<typeof URL.createObjectURL>;
 
     beforeEach(() => {
         // Setup for link fallback mechanism
-        linkClickSpy = jasmine.createSpy('link.click');
+        linkClickSpy = vi.fn();
         mockLink = {
             style: {},
             href: '',
@@ -17,20 +18,24 @@ describe('saveFile', () => {
             parentNode: document.body
         } as unknown as HTMLAnchorElement;
 
-        spyOn(document, 'createElement').and.returnValue(mockLink);
-        createObjectURLSpy = spyOn(URL, 'createObjectURL').and.returnValue('blob:mock-url');
-        spyOn(URL, 'revokeObjectURL');
-        spyOn(document.body, 'appendChild');
-        spyOn(document.body, 'removeChild');
+        vi.spyOn(document, 'createElement').mockReturnValue(mockLink);
+        createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {
+            /* noop */
+        });
+        vi.spyOn(document.body, 'appendChild').mockImplementation(
+            <T extends Node>(node: T) => node
+        );
+        vi.spyOn(document.body, 'removeChild').mockImplementation(
+            <T extends Node>(node: T) => node
+        );
     });
 
-    it('should use link fallback in Firefox', async () => {
-        // Firefox doesn't have showSaveFilePicker
-        if ('showSaveFilePicker' in window) {
-            pending('This test is for browsers without File System Access API');
-            return;
-        }
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
 
+    it.skipIf('showSaveFilePicker' in window)('should use link fallback in Firefox', async () => {
         await saveFile('test content', { fileName: 'test.txt', logLevel: 'debug' });
 
         expect(URL.createObjectURL).toHaveBeenCalled();
@@ -53,44 +58,39 @@ describe('saveFile', () => {
         expect(URL.revokeObjectURL).toHaveBeenCalled();
     });
 
-    it('should try to use File System Access API in Chrome', async () => {
-        // Skip in Firefox
-        if (!('showSaveFilePicker' in window)) {
-            pending('Test requires File System Access API support');
-            return;
+    it.skipIf(!('showSaveFilePicker' in window))(
+        'should try to use File System Access API in Chrome',
+        async () => {
+            const showSaveFilePickerSpy = vi
+                .spyOn(window, 'showSaveFilePicker')
+                .mockRejectedValue(new Error('Test rejection')); // non-AbortError -> falls back
+
+            await saveFile('test content', {
+                fileName: 'test.txt',
+                promptSaveAs: true,
+                logLevel: 'debug'
+            });
+
+            expect(showSaveFilePickerSpy).toHaveBeenCalled();
+            expect(linkClickSpy).toHaveBeenCalled(); // Fallback should be called after API error
         }
+    );
 
-        const showSaveFilePickerSpy = spyOn(window, 'showSaveFilePicker').and.rejectWith(
-            new Error('Test rejection') // non-AbortError -> falls back
-        );
+    it.skipIf(!('showSaveFilePicker' in window))(
+        'should re-throw AbortError when user cancels the save dialog',
+        async () => {
+            const abortError = new Error('User aborted');
+            abortError.name = 'AbortError';
+            vi.spyOn(window, 'showSaveFilePicker').mockRejectedValue(abortError);
 
-        await saveFile('test content', {
-            fileName: 'test.txt',
-            promptSaveAs: true,
-            logLevel: 'debug'
-        });
+            await expect(
+                saveFile('test content', { fileName: 'test.txt', promptSaveAs: true })
+            ).rejects.toBe(abortError);
 
-        expect(showSaveFilePickerSpy).toHaveBeenCalled();
-        expect(linkClickSpy).toHaveBeenCalled(); // Fallback should be called after API error
-    });
-
-    it('should re-throw AbortError when user cancels the save dialog', async () => {
-        if (!('showSaveFilePicker' in window)) {
-            pending('Test requires File System Access API support');
-            return;
+            // Fallback must NOT run when the user explicitly cancelled.
+            expect(linkClickSpy).not.toHaveBeenCalled();
         }
-
-        const abortError = new Error('User aborted');
-        abortError.name = 'AbortError';
-        spyOn(window, 'showSaveFilePicker').and.rejectWith(abortError);
-
-        await expectAsync(
-            saveFile('test content', { fileName: 'test.txt', promptSaveAs: true })
-        ).toBeRejectedWith(abortError);
-
-        // Fallback must NOT run when the user explicitly cancelled.
-        expect(linkClickSpy).not.toHaveBeenCalled();
-    });
+    );
 
     it('should use File name when no fileName option is provided', async () => {
         const testFile = new File(['test content'], 'test-file.txt', { type: 'text/plain' });
@@ -116,25 +116,20 @@ describe('saveFile', () => {
         await saveFile(testObject, { fileName: 'test.json', promptSaveAs: false });
 
         expect(mockLink.download).toBe('test.json');
-        expect(createObjectURLSpy).toHaveBeenCalledWith(jasmine.any(Blob));
+        expect(createObjectURLSpy).toHaveBeenCalledWith(expect.any(Blob));
 
-        const blob = createObjectURLSpy.calls.mostRecent().args[0] as Blob;
+        const blob = createObjectURLSpy.mock.calls.at(-1)![0] as Blob;
         expect(blob.type).toBe('application/json');
         const content = await blob.text();
         expect(JSON.parse(content)).toEqual(testObject);
     });
 
-    describe('File System Access API errors', () => {
+    describe.skipIf(!('showSaveFilePicker' in window))('File System Access API errors', () => {
         it('should handle permission denied errors', async () => {
-            if (!('showSaveFilePicker' in window)) {
-                pending('Test requires File System Access API support');
-                return;
-            }
-
             const error = new Error('Permission denied');
             error.name = 'NotAllowedError';
 
-            spyOn(window, 'showSaveFilePicker').and.rejectWith(error);
+            vi.spyOn(window, 'showSaveFilePicker').mockRejectedValue(error);
 
             // Should fall back to legacy method
             await saveFile('test content', {
@@ -146,15 +141,10 @@ describe('saveFile', () => {
         });
 
         it('should handle security errors', async () => {
-            if (!('showSaveFilePicker' in window)) {
-                pending('Test requires File System Access API support');
-                return;
-            }
-
             const error = new Error('Security Error');
             error.name = 'SecurityError';
 
-            spyOn(window, 'showSaveFilePicker').and.rejectWith(error);
+            vi.spyOn(window, 'showSaveFilePicker').mockRejectedValue(error);
 
             // Should fall back to legacy method
             await saveFile('test content', {
@@ -176,10 +166,10 @@ describe('saveFile', () => {
 
         it('should propagate convertToBlob errors', async () => {
             // Unsupported input – the new convertToBlob throws for symbols/functions etc.
-            await expectAsync(
+            await expect(
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 saveFile(Symbol('x') as any, { promptSaveAs: false })
-            ).toBeRejected();
+            ).rejects.toThrow();
             expect(linkClickSpy).not.toHaveBeenCalled();
         });
 

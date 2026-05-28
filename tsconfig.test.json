@@ -2,7 +2,7 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "noEmit": true,
-        "types": ["jasmine", "wicg-file-system-access"]
+        "types": ["@vitest/browser/context", "wicg-file-system-access"]
     },
-    "include": ["src/**/*.ts", "test/**/*.ts"]
+    "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.mts"]
 }

@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { convertToBlob } from '../../src/utils/blob';
 
 describe('convertToBlob', () => {
@@ -29,11 +30,11 @@ describe('convertToBlob', () => {
     it('should handle invalid base64 input gracefully', async () => {
         // Invalid base64 string with isBase64 flag
         const invalidBase64 = 'not-valid-base64!@#';
-        await expectAsync(convertToBlob(invalidBase64, { isBase64: true })).toBeRejected();
+        await expect(convertToBlob(invalidBase64, { isBase64: true })).rejects.toThrow();
 
         // Invalid data URL
         const invalidDataUrl = 'data:text/plain;base64,not-valid-base64!@#';
-        await expectAsync(convertToBlob(invalidDataUrl)).toBeRejected();
+        await expect(convertToBlob(invalidDataUrl)).rejects.toThrow();
     });
 
     it('should handle large base64 strings', async () => {
@@ -138,16 +139,16 @@ describe('convertToBlob', () => {
             const circular: any = { name: 'test' };
             circular.self = circular;
 
-            await expectAsync(convertToBlob(circular)).toBeRejectedWithError();
+            await expect(convertToBlob(circular)).rejects.toThrow();
         });
 
         it('should reject unsupported input types', async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await expectAsync(convertToBlob(Symbol('x') as any)).toBeRejected();
+            await expect(convertToBlob(Symbol('x') as any)).rejects.toThrow();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await expectAsync(convertToBlob(123 as any)).toBeRejected();
+            await expect(convertToBlob(123 as any)).rejects.toThrow();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await expectAsync(convertToBlob(null as any)).toBeRejected();
+            await expect(convertToBlob(null as any)).rejects.toThrow();
         });
     });
 

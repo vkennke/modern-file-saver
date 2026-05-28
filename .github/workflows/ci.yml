@@ -20,12 +20,13 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox
       - name: Type-check
         run: npm run lint
       - name: Prettier
         run: npm run format:check
-      - name: Test (headless Chrome + Firefox)
+      - name: Test (Vitest browser mode – Chromium + Firefox via Playwright)
         run: npm test
       - name: Build
         run: npm run build
-
