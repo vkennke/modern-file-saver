@@ -78,10 +78,28 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run build
+      - name: Determine npm dist-tag
+        id: dist_tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Strip leading "v" → semver string (e.g. v2.0.0-rc.0 → 2.0.0-rc.0)
+          VERSION="${TAG#v}"
+          # Extract the prerelease identifier if any: take everything after the
+          # first "-" up to the first "." (e.g. "rc.0" → "rc", "beta" → "beta").
+          # If no prerelease identifier is present, fall back to "latest".
+          if [[ "$VERSION" == *-* ]]; then
+            PRE="${VERSION#*-}"      # 2.0.0-rc.0 → rc.0
+            DIST_TAG="${PRE%%.*}"    # rc.0 → rc
+          else
+            DIST_TAG="latest"
+          fi
+          echo "Publishing $VERSION with dist-tag '$DIST_TAG'"
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
       - name: Publish (Trusted Publishing + provenance)
         # No NODE_AUTH_TOKEN needed – npm uses the GitHub OIDC token automatically.
         # Provenance is generated automatically with Trusted Publishing.
-        run: npm publish --access public
+        run: npm publish --access public --tag "${{ steps.dist_tag.outputs.dist_tag }}"
 
   github-release:
     name: Create GitHub Release
