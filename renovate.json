@@ -25,12 +25,7 @@
         },
         {
             "description": "Group all ESLint-related packages",
-            "matchPackageNames": [
-                "eslint",
-                "/^@eslint//",
-                "/^eslint-/",
-                "typescript-eslint"
-            ],
+            "matchPackageNames": ["eslint", "/^@eslint//", "/^eslint-/", "typescript-eslint"],
             "groupName": "eslint"
         },
         {
@@ -58,5 +53,3 @@
         "enabled": true
     }
 }
-
-
