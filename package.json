@@ -27,13 +27,13 @@
     "scripts": {
         "build": "tsdown",
         "changeset": "changeset",
-        "changeset:version": "changeset version && npm install --package-lock-only",
-        "changeset:publish": "npm run build && changeset publish",
+        "changeset:version": "changeset version && pnpm install --lockfile-only",
+        "changeset:publish": "pnpm run build && changeset publish",
         "format": "prettier --write \"**/*.{js,ts,json,md}\"",
         "format:check": "prettier --check \"**/*.{js,ts,json,md}\"",
         "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && eslint src test",
         "lint:fix": "eslint src test --fix",
-        "prepublishOnly": "npm run build",
+        "prepublishOnly": "pnpm run build",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage"
