@@ -8,3 +8,8 @@ package-lock.json
 # JSONC files with comments – Prettier strips the comments
 tsconfig.json
 tsconfig.test.json
+
+# Managed by Changesets itself
+.changeset/*.md
+.changeset/pre.json
+!.changeset/README.md
