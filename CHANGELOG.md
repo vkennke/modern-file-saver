@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.0.1
+
+### Patch Changes
+
+- [`348398d`](https://github.com/vkennke/modern-file-saver/commit/348398dfbe9e5ca82aa9e37d27753ee192ee1d08) Thanks [@vkennke](https://github.com/vkennke)! - Add a "Migrating from file-saver" section to the README with a feature
+  comparison and API translation, plus npm keywords (`file-saver`,
+  `saveAs`, etc.) for better discoverability by users searching for a
+  maintained replacement of the deprecated `file-saver` library.
+
+- [`6b75677`](https://github.com/vkennke/modern-file-saver/commit/6b756778d2b24d108f00a45a6bbb9ddf53040da5) Thanks [@vkennke](https://github.com/vkennke)! - Internal toolchain modernisation – no runtime behaviour or public API
+  changes. The published artefacts are equivalent to v2.0.0.
+    - Replace tsup with [tsdown](https://tsdown.dev) as the build tool and
+      drop `@swc/core`. tsdown's built-in oxc-minify produces the same
+      ~3.25 kB raw / ~1.5 kB gzipped bundle.
+    - Replace Karma + webpack + Jasmine with
+      [Vitest browser mode](https://vitest.dev/guide/browser/) backed by
+      Playwright. Tests run in headless Chromium + Firefox out of the box
+      and execute significantly faster.
+    - Add explicit minimal `permissions: contents: read` to the CI workflow
+      for a more secure default token scope.
+
 ## 2.0.0
 
 ### Major Changes
