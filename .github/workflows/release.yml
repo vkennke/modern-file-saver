@@ -33,7 +33,7 @@ jobs:
         name: Release
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
               with:
                   # changesets/action needs the full history to derive the
                   # changelog correctly and to push the version-packages PR.
