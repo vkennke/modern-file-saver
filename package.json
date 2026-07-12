@@ -68,16 +68,16 @@
         "@changesets/cli": "^2.31.0",
         "@eslint/js": "^10.0.1",
         "@types/wicg-file-system-access": "^2023.10.7",
-        "@vitest/browser": "^4.1.9",
-        "@vitest/browser-playwright": "^4.1.9",
-        "@vitest/coverage-v8": "^4.1.9",
+        "@vitest/browser": "^4.1.10",
+        "@vitest/browser-playwright": "^4.1.10",
+        "@vitest/coverage-v8": "^4.1.10",
         "eslint": "^10.7.0",
         "playwright": "^1.61.1",
         "prettier": "3.9.5",
         "tsdown": "^0.22.5",
         "typescript": "~5.9.3",
         "typescript-eslint": "^8.63.0",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "engines": {
         "node": ">=20"
