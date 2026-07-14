@@ -42,7 +42,7 @@ jobs:
             - name: Install pnpm
               uses: pnpm/action-setup@v6
 
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with:
                   # Current Node LTS. The actual publish runs via `pnpm publish`
                   # (invoked by changesets), which performs Trusted Publishing (OIDC)
