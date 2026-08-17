@@ -64,7 +64,7 @@ jobs:
                   pnpm run build
 
             - name: Create release PR or publish
-              uses: changesets/action@v1
+              uses: changesets/action@v2.1.0
               with:
                   # When there are no pending changesets, this script runs and
                   # publishes any pending versioned packages to npm (with provenance,
