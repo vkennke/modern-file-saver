@@ -18,6 +18,7 @@ A modern file saving library for browsers that uses the File System Access API w
     - [Bundle Variants](#bundle-variants)
     - [Supported Input Types](#supported-input-types)
     - [Options](#options)
+    - [Error Handling](#error-handling)
     - [Base64 Handling](#base64-handling)
     - [Debug Logging](#debug-logging)
 - [Browser Support](#browser-support)
@@ -39,7 +40,7 @@ A modern file saving library for browsers that uses the File System Access API w
 - 📄 Enhanced base64 support
 - 💪 TypeScript support
 - 📦 Zero dependencies
-- 🪶 Tiny size (~3.1 kB minified, ~1.5 kB gzipped)
+- 🪶 Tiny size (~4.8 kB minified, ~2.1 kB gzipped)
 
 ## Installation
 
@@ -77,13 +78,19 @@ The library supports various input formats like strings, base64, blobs, objects,
 ```typescript
 type InputType =
     | string // Plain text, base64, or data URLs
-    | Blob // Binary data with type information
+    | Blob // Binary data with type information (also File)
     | ArrayBuffer // Raw binary data
-    | Uint8Array // Binary data
+    | ArrayBufferView // Uint8Array and other typed arrays / DataView
     | URLSearchParams // Form data as URL parameters
     | FormData // Form data – serialised as application/x-www-form-urlencoded
-    | object; // Will be JSON.stringified
+    | Record<string, unknown> // Plain objects -> JSON
+    | readonly unknown[]; // Arrays -> JSON
 ```
+
+Class instances are accepted as well, as long as they carry own enumerable
+properties – only those are serialised by `JSON.stringify`. Values whose state
+lives in internal slots (`Error`, `Promise`, `RegExp`, `Map`, `Set`, `Date`,
+`WeakMap`, …) are **rejected** rather than silently written as an empty `{}`.
 
 ### Options
 
@@ -109,8 +116,39 @@ interface SaveOptions {
     isBase64?: boolean;
 
     // Default: 'none'
-    // Enable debug logging to console
-    logLevel?: 'debug' | 'none';
+    // 'debug' – verbose logging of every step to the console
+    // 'warn'  – only warnings, e.g. when the File System Access API failed
+    //           and the anchor fallback is used
+    // 'none'  – silent
+    logLevel?: 'debug' | 'warn' | 'none';
+}
+```
+
+### Error Handling
+
+`saveFile` rejects instead of failing silently. The cases worth handling explicitly:
+
+| Situation                                                            | Rejection                                          |
+| -------------------------------------------------------------------- | -------------------------------------------------- |
+| User cancels the native save dialog                                  | `DOMException` / `Error` with `name: 'AbortError'` |
+| Writing to the chosen file fails (disk full, permissions revoked, …) | the underlying write error                         |
+| Unsupported input type                                               | `Error: Unsupported input type: …`                 |
+| `FormData` containing a `File`/`Blob`                                | `Error: FormData entry "…" is a File …`            |
+| Object with circular references                                      | `TypeError` from `JSON.stringify`                  |
+
+A cancelled dialog is **not** retried via the anchor fallback – the user
+explicitly said no. Every other File System Access API failure (unsupported
+browser, insecure context, blocked by permissions policy) falls back to the
+traditional download automatically.
+
+```typescript
+try {
+    await saveFile(data, { fileName: 'report.csv' });
+} catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+        return; // user cancelled – nothing to report
+    }
+    throw error;
 }
 ```
 
@@ -125,7 +163,18 @@ The library supports three ways to handle base64 data:
 await saveFile('data:text/plain;base64,SGVsbG8gV29ybGQ=', {
     fileName: 'hello.txt'
 });
+
+// Media type parameters are supported and preserved
+await saveFile('data:text/plain;charset=utf-8;base64,SGVsbG8gV29ybGQ=', {
+    fileName: 'hello.txt'
+});
+
+// Which makes canvas exports work out of the box
+await saveFile(canvas.toDataURL('image/png'), { fileName: 'chart.png' });
 ```
+
+Data URLs **without** the `;base64` marker (e.g. `data:text/plain,Hello`) are not
+decoded – they are saved verbatim as text.
 
 2. Raw base64 with flag:
 
@@ -149,21 +198,25 @@ await saveFile('SGVsbG8gV29ybGQ=', {
 
 ### Debug Logging
 
-Enable debug logging to understand the file saving process:
+Enable logging to understand the file saving process:
 
 ```typescript
-await saveFile(data, {
-    fileName: 'data.json',
-    logLevel: 'debug' // Will show operations in console
-});
+// Verbose: every step
+await saveFile(data, { fileName: 'data.json', logLevel: 'debug' });
+
+// Quiet: only report when the File System Access API had to be abandoned
+await saveFile(data, { fileName: 'data.json', logLevel: 'warn' });
 ```
 
-Debug logs are prefixed with `[modern-file-saver]` and include information about:
+Log output is prefixed with `[modern-file-saver]`. `debug` covers:
 
 - Input type detection
 - Blob conversion
 - API selection (File System Access API vs fallback)
 - Error handling
+
+`warn` is limited to the fallback notice (`console.warn`), which is the signal
+you usually want in production.
 
 ## Browser Support
 
@@ -183,20 +236,24 @@ Debug logs are prefixed with `[modern-file-saver]` and include information about
 
 - Requires modern JavaScript features (ES2024)
 
-> **Note:** The published bundle is compiled to ES2024 – supported by all current evergreen browsers (Chrome, Edge, Firefox incl. ESR, Safari). The `engines.node` field requires Node.js 20+ for development/build only; the runtime is browser-only.
+> **Note:** The published bundle is compiled to ES2024 – supported by all current evergreen browsers (Chrome, Edge, Firefox incl. ESR, Safari). The `engines.node` field requires Node.js 22+ for development/build only; the runtime is browser-only.
 
 ### Limitations
 
 - File System Access API:
-    - Not available in iframes
-    - Requires secure context (HTTPS)
-    - User permission required
+    - Requires a secure context (HTTPS)
+    - Requires transient user activation – call `saveFile` directly from a user
+      gesture (click, keypress). `saveFile` opens the dialog _before_ serialising
+      the input so a large payload cannot eat up that budget.
+    - Blocked in cross-origin iframes unless allowed via the permissions policy
+    - Falls back to the anchor download whenever any of the above is not met
 - Base64:
     - Large base64 strings may impact performance
     - Memory usage proportional to data size
 - FormData:
-    - File inputs not supported in FormData
-    - All values converted to strings
+    - Serialised as `application/x-www-form-urlencoded`, not multipart
+    - `File`/`Blob` entries are rejected (that format cannot carry binary data)
+    - All other values are converted to strings
 
 ## Examples
 
@@ -328,7 +385,7 @@ await saveFile(data, {
 | TypeScript types                | ❌ (via @types)       | ✅ built-in         |
 | Native ESM build                | ❌ (UMD only)         | ✅                  |
 | `exports` / `sideEffects` field | ❌                    | ✅                  |
-| Bundle size (min + gzip)        | ~1.3 kB               | ~1.5 kB             |
+| Bundle size (min + gzip)        | ~1.3 kB               | ~2.1 kB             |
 | Zero dependencies               | ✅                    | ✅                  |
 | npm provenance                  | ❌                    | ✅                  |
 
@@ -349,6 +406,7 @@ await saveFile(blob, { fileName: 'hello.txt' });
 The main differences:
 
 - `saveFile` is **async** (returns `Promise<void>`) – it awaits the File System Access API dialog and cleans up resources correctly
+- A cancelled save dialog rejects with an `AbortError` (see [Error Handling](#error-handling)); `file-saver` has no equivalent signal
 - URL strings are **not** fetched automatically – fetch the response yourself and pass the `Blob` for full control over error handling
 - `fileName` is passed as part of the options object instead of a second positional argument
 
@@ -372,8 +430,15 @@ pnpm test
 # Run tests in watch mode
 pnpm run test:watch
 
+# Run tests with coverage (Chromium only – the v8 provider cannot
+# aggregate across multiple browser instances)
+pnpm run test:coverage
+
 # Build the library
 pnpm run build
+
+# Everything CI runs (lint, format check, tests, build)
+pnpm run verify
 ```
 
 ## Contributing
