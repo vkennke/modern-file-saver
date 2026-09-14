@@ -32,6 +32,7 @@ jobs:
     release:
         name: Release
         runs-on: ubuntu-latest
+        timeout-minutes: 20
         steps:
             - uses: actions/checkout@v7
               with:
@@ -53,15 +54,27 @@ jobs:
 
             - run: pnpm install --frozen-lockfile
 
+            # Playwright pins its browser builds per version, so the resolved
+            # playwright version is all the cache needs to be keyed on.
+            - name: Resolve Playwright version
+              id: playwright
+              run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+            - name: Cache Playwright browsers
+              id: playwright-cache
+              uses: actions/cache@v6
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
             - name: Install Playwright browsers
+              if: steps.playwright-cache.outputs.cache-hit != 'true'
               run: pnpm exec playwright install --with-deps chromium firefox
+            - name: Install Playwright system dependencies
+              if: steps.playwright-cache.outputs.cache-hit == 'true'
+              run: pnpm exec playwright install-deps chromium firefox
 
+            # Same script CI runs, so the release gate cannot drift from CI.
             - name: Verify (lint, format, test, build)
-              run: |
-                  pnpm run lint
-                  pnpm run format:check
-                  pnpm test
-                  pnpm run build
+              run: pnpm run verify
 
             - name: Create release PR or publish
               uses: changesets/action@v2.1.2

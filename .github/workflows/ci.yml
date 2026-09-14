@@ -12,10 +12,18 @@ on:
 permissions:
   contents: read
 
+# Superseded pushes to the same PR are cancelled – only the latest revision is
+# worth a full browser test run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
         node-version: [22, 24]
     steps:
@@ -28,13 +36,30 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+
+      # Playwright pins its browser builds per version, so the resolved
+      # playwright version is all the cache needs to be keyed on.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium firefox
-      - name: Type-check
-        run: pnpm run lint
-      - name: Prettier
-        run: pnpm run format:check
-      - name: Test (Vitest browser mode – Chromium + Firefox via Playwright)
-        run: pnpm test
-      - name: Build
-        run: pnpm run build
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium firefox
+
+      # Mirrors the release workflow – both run the same `verify` script so the
+      # two pipelines cannot drift apart.
+      - name: Verify (lint, format, test in Chromium + Firefox, build)
+        run: pnpm run verify
+
+      - name: Coverage
+        if: matrix.node-version == 24
+        run: pnpm run test:coverage
