@@ -45,13 +45,7 @@
             "rangeStrategy": "pin"
         },
         {
-            "description": "Block pnpm 11.12.0 - self-update crashes CI with 'Cannot use in operator to search for integrity in undefined' (see pnpm/pnpm#12959, pnpm/action-setup#276). Re-enable once a fixed release is available.",
-            "matchDepNames": ["pnpm"],
-            "matchDepTypes": ["packageManager"],
-            "allowedVersions": "!/^11\\.12\\.0$/"
-        },
-        {
-            "description": "Block TypeScript v6 until ecosystem (typescript-eslint, tsdown, ...) is ready",
+            "description": "Block TypeScript 7 until typescript-eslint supports it. Verified 2026-09-14: tsc 7.0.2 type-checks this project cleanly and tsdown builds fine, but typescript-eslint 8.70.0 (latest) hard-fails with 'typescript-eslint does not support TS 7.0' and declares peer typescript '>=4.8.4 <6.1.0'. Tracking: https://github.com/typescript-eslint/typescript-eslint/issues/10940 (support targeted at TS >=7.1). Re-enable once typescript-eslint ships TS 7 support.",
             "matchPackageNames": ["typescript"],
             "matchUpdateTypes": ["major"],
             "enabled": false
