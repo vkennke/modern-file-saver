@@ -21,7 +21,7 @@
     },
     "files": [
         "dist",
-        "!dist/**/*.map",
+        "src",
         "CHANGELOG.md"
     ],
     "scripts": {
@@ -36,7 +36,8 @@
         "prepublishOnly": "pnpm run build",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "verify": "pnpm run lint && pnpm run format:check && pnpm test && pnpm run build"
     },
     "keywords": [
         "file",
@@ -80,7 +81,7 @@
         "vitest": "^5.0.0"
     },
     "engines": {
-        "node": ">=20"
+        "node": ">=22"
     },
     "devEngines": {
         "runtime": {
