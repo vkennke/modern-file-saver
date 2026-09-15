@@ -149,6 +149,45 @@ describe('compat saveAs', () => {
             expect(await savedBytes()).toEqual(HI);
         });
 
+        it.each([
+            'text/plain;charset=utf-8',
+            'text/csv; charset=utf-8',
+            ' text/plain ;charset=utf-8',
+            'application/xml;charset=utf-8',
+            'application/xhtml+xml;charset=utf-8',
+            'image/svg+xml;charset=utf-8',
+            'text/plain;foo=bar;charset = utf-8'
+        ])('prepends a BOM for %j', async type => {
+            await saveAs(new Blob(['hi'], { type }), 'hi.txt', { autoBom: true });
+
+            expect(await savedBytes()).toEqual([...BOM, ...HI]);
+        });
+
+        it.each([
+            'text/plain',
+            'text/plain;charset=utf-16',
+            'application/octet-stream;charset=utf-8',
+            'application/xmlx;charset=utf-8',
+            'text/pl ain;charset=utf-8',
+            'xml;charset=utf-8'
+        ])('does not prepend a BOM for %j', async type => {
+            await saveAs(new Blob(['hi'], { type }), 'hi.txt', { autoBom: true });
+
+            expect(await savedBytes()).toEqual(HI);
+        });
+
+        it('classifies pathological MIME types without backtracking', async () => {
+            // Regression guard for CWE-1333: the single pattern this check used
+            // to be was quadratic on these inputs and needed ~20s here.
+            const type = `text/${';'.repeat(200_000)}`;
+            const started = performance.now();
+
+            await saveAs(new Blob(['hi'], { type }), 'hi.txt', { autoBom: true });
+
+            expect(performance.now() - started).toBeLessThan(2000);
+            expect(await savedBytes()).toEqual(HI);
+        });
+
         it('supports the legacy disableAutoBOM boolean argument', async () => {
             await saveAs(new Blob(['hi'], { type: 'text/plain;charset=utf-8' }), 'hi.txt', false);
 

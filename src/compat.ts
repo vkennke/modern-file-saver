@@ -39,14 +39,40 @@ export interface FileSaverOptions {
     logLevel?: LogLevel;
 }
 
-/**
- * MIME types for which `file-saver` prepends a BOM – copied verbatim so
- * `autoBom` keeps triggering on exactly the same inputs.
- */
-const UTF8_TEXT_PATTERN =
-    /^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i;
+const UTF8_CHARSET_PATTERN = /charset\s*=\s*utf-8/i;
+
+const INNER_WHITESPACE_PATTERN = /\s/;
 
 const DEFAULT_FILE_NAME = 'download';
+
+/**
+ * Whether `file-saver` would prepend a BOM for this MIME type.
+ *
+ * `file-saver` classified the whole type with one pattern. Its `\S*` groups also
+ * match `/` and `;`, which makes that pattern quadratic on adversarial input
+ * (CWE-1333), so the type is split at its first parameter separator and both
+ * halves are checked without an ambiguous repetition. The only inputs
+ * classified differently are MIME types whose essence contains a `;`, which are
+ * malformed to begin with.
+ */
+function isUtf8Text(mimeType: string): boolean {
+    const separator = mimeType.indexOf(';');
+    if (separator === -1) {
+        return false;
+    }
+
+    const essence = mimeType.slice(0, separator).trim().toLowerCase();
+    if (INNER_WHITESPACE_PATTERN.test(essence)) {
+        return false;
+    }
+
+    const isTextual =
+        essence.startsWith('text/') ||
+        essence === 'application/xml' ||
+        (essence.includes('/') && essence.endsWith('+xml'));
+
+    return isTextual && UTF8_CHARSET_PATTERN.test(mimeType.slice(separator + 1));
+}
 
 function reportError(message: string, error: unknown): void {
     // Deliberately not routed through the logger: `saveAs()` swallows failures
@@ -72,7 +98,7 @@ function normaliseOptions(options: FileSaverOptions | boolean | undefined): File
 }
 
 function withBom(blob: Blob, autoBom: boolean | undefined): Blob {
-    if (!autoBom || !UTF8_TEXT_PATTERN.test(blob.type)) {
+    if (!autoBom || !isUtf8Text(blob.type)) {
         return blob;
     }
     // The browser encodes the U+FEFF code point as EF BB BF.
