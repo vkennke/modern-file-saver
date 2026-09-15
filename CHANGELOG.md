@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.1
+
+### Patch Changes
+
+- [`9480ef3`](https://github.com/vkennke/modern-file-saver/commit/9480ef346c827624c50f69969b6b01fc69f76b4b) Thanks [@vkennke](https://github.com/vkennke)! - Fix a polynomial worst case (CWE-1333) in the compatibility layer's `autoBom` MIME type check. The pattern was copied verbatim from `file-saver`, where the `\S*` groups also match `/` and `;`. The type is now split at its first parameter separator and both halves are matched without an ambiguous repetition, which classifies every well-formed MIME type exactly as before.
+
 ## 3.2.0
 
 ### Minor Changes
