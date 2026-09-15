@@ -27,6 +27,8 @@ A modern file saving library for browsers that uses the File System Access API w
     - [Basic Usage](#basic-usage)
     - [Advanced Examples](#advanced-examples)
 - [Migrating from file-saver](#migrating-from-file-saver)
+    - [Drop-in Compatibility Layer](#drop-in-compatibility-layer)
+    - [API Comparison](#api-comparison)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
@@ -40,7 +42,8 @@ A modern file saving library for browsers that uses the File System Access API w
 - 📄 Enhanced base64 support
 - 💪 TypeScript support
 - 📦 Zero dependencies
-- 🪶 Tiny size (~4.8 kB minified, ~2.1 kB gzipped)
+- 🪶 Tiny size (~5.0 kB minified, ~2.2 kB gzipped)
+- 🔁 Drop-in `file-saver` compatibility layer
 
 ## Installation
 
@@ -67,6 +70,10 @@ import { saveFile } from 'modern-file-saver';
 
 // Minified bundle
 import { saveFile } from 'modern-file-saver/min';
+
+// file-saver compatibility layer (see Migrating from file-saver)
+import { saveAs } from 'modern-file-saver/compat';
+import { saveAs } from 'modern-file-saver/min/compat';
 ```
 
 Both variants are available in CommonJS and ES Module formats and include TypeScript type definitions.
@@ -385,11 +392,30 @@ await saveFile(data, {
 | TypeScript types                | ❌ (via @types)       | ✅ built-in         |
 | Native ESM build                | ❌ (UMD only)         | ✅                  |
 | `exports` / `sideEffects` field | ❌                    | ✅                  |
-| Bundle size (min + gzip)        | ~1.3 kB               | ~2.1 kB             |
+| Bundle size (min + gzip)        | ~1.3 kB               | ~2.2 kB             |
 | Zero dependencies               | ✅                    | ✅                  |
 | npm provenance                  | ❌                    | ✅                  |
 
 `modern-file-saver` is slightly larger because it supports more input types (objects, base64, data URLs, FormData, URLSearchParams, plain text, …) and a debug logger; `file-saver` accepts `Blob` and URL strings (auto-fetched via XHR).
+
+### Drop-in Compatibility Layer
+
+`modern-file-saver/compat` ships a `saveAs()` with the same signature and semantics as `file-saver`, so the first migration step is a single import change:
+
+```diff
+-import { saveAs } from 'file-saver';
++import { saveAs } from 'modern-file-saver/compat';
+
+ saveAs(blob, 'hello.txt');
+```
+
+Named, default and `FileSaver.saveAs` imports all keep working, as do `autoBom` and the legacy `disableAutoBOM` boolean. Strings are still treated as URLs and downloaded. The compat layer is a separate entry point, so its code is only bundled when you import it.
+
+Opt into the native save dialog without touching the rest of your code:
+
+```typescript
+saveAs(blob, 'hello.txt', { promptSaveAs: true });
+```
 
 ### API Comparison
 
@@ -409,6 +435,8 @@ The main differences:
 - A cancelled save dialog rejects with an `AbortError` (see [Error Handling](#error-handling)); `file-saver` has no equivalent signal
 - URL strings are **not** fetched automatically – fetch the response yourself and pass the `Blob` for full control over error handling
 - `fileName` is passed as part of the options object instead of a second positional argument
+
+See **[MIGRATION.md](MIGRATION.md)** for the full step-by-step guide, an automated import rewrite, and a behaviour-difference checklist.
 
 ## Development
 

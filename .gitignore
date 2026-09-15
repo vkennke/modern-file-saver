@@ -25,6 +25,7 @@ yarn-error.log*
 /coverage/
 
 # Vitest browser mode artefacts (screenshots, attachments)
+.vitest/
 .vitest-attachments/
 **/__screenshots__/
 

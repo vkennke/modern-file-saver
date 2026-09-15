@@ -4,16 +4,10 @@ import { InputType, SaveOptions } from './types';
 import { convertToBlob, describeInput, resolveMimeType } from './utils/blob';
 import { createLogger, type Logger } from './utils/logger';
 import { getFilePickerOptions } from './utils/file-picker';
+import { clickAnchor } from './utils/anchor';
 
 export type { InputType, SaveOptions } from './types';
 export type { LogLevel, Logger } from './utils/logger';
-
-/**
- * Upper bound for the wait between clicking the anchor and revoking its object
- * URL. `requestAnimationFrame` normally settles this far earlier; the timeout
- * only matters when rAF never fires (see {@link nextFrame}).
- */
-const ANCHOR_CLEANUP_TIMEOUT_MS = 50;
 
 export async function saveFile(input: InputType, options: SaveOptions = {}): Promise<void> {
     const {
@@ -81,50 +75,10 @@ export async function saveFile(input: InputType, options: SaveOptions = {}): Pro
     await saveViaAnchor(blob, fileName, logger);
 }
 
-/**
- * Yield once so the browser can pick up the anchor click before the object URL
- * is revoked.
- *
- * `requestAnimationFrame` is the right signal (it fires after the click task has
- * been processed) but it never fires in hidden or backgrounded tabs. Racing it
- * against a timeout keeps the fast path while guaranteeing that `saveFile()`
- * always settles – otherwise the returned promise would hang forever and the
- * object URL would leak.
- */
-function nextFrame(): Promise<void> {
-    return new Promise<void>(resolve => {
-        let settled = false;
-        const done = (): void => {
-            if (settled) {
-                return;
-            }
-            settled = true;
-            clearTimeout(timer);
-            resolve();
-        };
-
-        const timer = setTimeout(done, ANCHOR_CLEANUP_TIMEOUT_MS);
-        if (typeof requestAnimationFrame === 'function') {
-            requestAnimationFrame(done);
-        }
-    });
-}
-
 async function saveViaAnchor(blob: Blob, fileName: string, logger: Logger): Promise<void> {
     const url = URL.createObjectURL(blob);
     try {
-        const link = document.createElement('a');
-        link.style.display = 'none';
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-
-        try {
-            link.click();
-            await nextFrame();
-        } finally {
-            link.parentNode?.removeChild(link);
-        }
+        await clickAnchor(url, { download: fileName });
     } finally {
         URL.revokeObjectURL(url);
         logger.debug('File saved successfully using legacy method');

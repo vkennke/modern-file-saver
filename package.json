@@ -12,17 +12,38 @@
             "import": "./dist/index.mjs",
             "require": "./dist/index.js"
         },
+        "./compat": {
+            "import": {
+                "types": "./dist/compat.d.mts",
+                "default": "./dist/compat.mjs"
+            },
+            "require": {
+                "types": "./dist/compat.d.ts",
+                "default": "./dist/compat.js"
+            }
+        },
         "./min": {
             "types": "./dist/index.d.ts",
             "import": "./dist/min/index.mjs",
             "require": "./dist/min/index.js"
+        },
+        "./min/compat": {
+            "import": {
+                "types": "./dist/compat.d.mts",
+                "default": "./dist/min/compat.mjs"
+            },
+            "require": {
+                "types": "./dist/compat.d.ts",
+                "default": "./dist/min/compat.js"
+            }
         },
         "./package.json": "./package.json"
     },
     "files": [
         "dist",
         "src",
-        "CHANGELOG.md"
+        "CHANGELOG.md",
+        "MIGRATION.md"
     ],
     "scripts": {
         "build": "tsdown",
