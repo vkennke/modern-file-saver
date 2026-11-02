@@ -48,7 +48,7 @@ jobs:
                   # Current Node LTS. The actual publish runs via `pnpm publish`
                   # (invoked by changesets), which performs Trusted Publishing (OIDC)
                   # against the npm registry — supported since pnpm v10.
-                  node-version: 24
+                  node-version: 26.13.0
                   cache: 'pnpm'
                   registry-url: 'https://registry.npmjs.org'
 
